@@ -1,0 +1,33 @@
+{
+	"name": "monorepo",
+	"version": "0.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"build": "tsc -b",
+		"dev": "pnpm -r --parallel run start:dev",
+		"start": "pnpm -r --parallel run start:prod",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"gen": "protoc -I ./common/contracts/proto ./common/contracts/proto/*.proto --ts_proto_out=./common/contracts/generated --ts_proto_opt=nestJs=true,package=omit"
+	},
+	"keywords": [],
+	"author": "kirillasyamov",
+	"license": "ISC",
+	"type": "module",
+	"devDependencies": {
+		"cross-env": "catalog:development",
+		"eslint": "catalog:development",
+		"eslint-config-prettier": "catalog:development",
+		"prettier": "catalog:development",
+		"protoc": "catalog:development",
+		"ts-node": "catalog:development",
+		"ts-proto": "catalog:development",
+		"tsconfig-paths": "catalog:development",
+		"tsx": "catalog:development",
+		"typescript": "catalog:development",
+		"typescript-eslint": "catalog:development"
+	}
+}

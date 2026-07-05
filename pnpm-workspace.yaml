@@ -1,0 +1,43 @@
+allowBuilds:
+    esbuild: true
+    protobufjs: true
+shellEmulator: true
+engineStrict: true
+catalogMode: prefer
+
+packages:
+    - 'common'
+    - 'api-gateway'
+    - 'auth-service'
+    - 'user-service'
+    - 'token-service'
+
+catalogs:
+    development:
+        '@types/node': ^26.0.1
+        cross-env: ^10.1.0
+        eslint: ^10.6.0
+        eslint-config-prettier: ^10.1.8
+        prettier: ^3.9.0
+        protoc: ^35.1.0
+        ts-node: ^10.9.2
+        ts-proto: ^2.11.8
+        tsconfig-paths: ^4.2.0
+        tsx: ^4.23.0
+        typescript: ^6.0.3
+        typescript-eslint: ^8.62.0
+    grpc:
+        '@grpc/grpc-js': ^1.14.4
+        '@grpc/proto-loader': ^0.8.1
+    nest:
+        '@nestjs/common': ^11.1.27
+        '@nestjs/config': ^4.0.4
+        '@nestjs/core': ^11.1.27
+        '@nestjs/microservices': ^11.1.27
+        '@nestjs/platform-fastify': ^11.1.27
+    runtime:
+        reflect-metadata: ^0.2.2
+        rxjs: ^7.8.2
+    validation:
+        class-transformer: ^0.5.1
+        class-validator: ^0.15.1

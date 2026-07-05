@@ -1,0 +1,16 @@
+{
+	"references": [
+		{
+			"path": "auth-service/tsconfig.json"
+		},
+		{
+			"path": "api-gateway/tsconfig.json"
+		},
+		{
+			"path": "user-service/tsconfig.json"
+		},
+		{
+			"path": "token-service/tsconfig.json"
+		}
+	]
+}
