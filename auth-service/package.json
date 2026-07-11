@@ -20,6 +20,7 @@
 	"type": "module",
 	"devDependencies": {
 		"@types/node": "catalog:development",
+		"@types/pg": "catalog:development",
 		"cross-env": "catalog:development",
 		"eslint": "catalog:development",
 		"eslint-config-prettier": "catalog:development",
@@ -30,6 +31,7 @@
 		"typescript-eslint": "catalog:development"
 	},
 	"dependencies": {
+		"dotenv": "catalog:config",
 		"@grpc/grpc-js": "catalog:grpc",
 		"@grpc/proto-loader": "catalog:grpc",
 		"@nestjs/common": "catalog:nest",
@@ -38,6 +40,10 @@
 		"@nestjs/microservices": "catalog:nest",
 		"class-transformer": "catalog:validation",
 		"class-validator": "catalog:validation",
+		"prisma": "catalog:database",
+		"@prisma/client": "catalog:database",
+		"@prisma/adapter-pg": "catalog:database",
+		"pg": "catalog:database",
 		"reflect-metadata": "catalog:runtime",
 		"rxjs": "catalog:runtime"
 	}
