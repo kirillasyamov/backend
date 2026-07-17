@@ -89,3 +89,8 @@ message ChangePhoneRequest {
 	string accountId = 1;
 	string newPhone = 2;
 }
+
+message ChangeEmailRequest {
+	string accountId = 1;
+	string newEmail = 2;
+}
