@@ -11,16 +11,48 @@ datasource db {
 model Account {
 	id String @id @default(nanoid())
 
+	role Role @relation(fields: [roleId], references: [id])
+	roleId String @map("role_id")
+
 	phone String? @unique
 	email String? @unique
 
 	isPhoneVerified Boolean @default(false) @map("is_phone_verified")
 	isEmailVerified Boolean @default(false) @map("is_email_verified")
 
+	passwordHash String? @map("password_hash")
+
+	sessions Session[]
+
 	createdAt DateTime @default(now()) @map("created_at")
 	updatedAt DateTime @updatedAt @map("updated_at")
 
-	passwordHash String? @map("password_hash")
-
+	@@index([roleId])
 	@@map("account")
+}
+
+model Session {
+	id String @id @default(uuid())
+
+	account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+	accountId String @map("account_id")
+	deviceIdentifier String  @map("device_identifier")
+
+	refreshTokenHash String @unique @map("refresh_token_hash")
+	expiresAt DateTime @map("expires_at")
+	createdAt DateTime @default(now()) @map("created_at")
+
+	@@unique([accountId, deviceIdentifier])
+	@@index([expiresAt])
+	@@map("session")
+}
+
+model Role {
+  	id String @id @default(uuid())
+	name String @unique
+	description String? @db.VarChar(255)
+
+	accounts Account[]
+
+	@@map("role")
 }
