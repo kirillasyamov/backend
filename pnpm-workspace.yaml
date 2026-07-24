@@ -43,6 +43,7 @@ catalogs:
         '@nestjs/swagger': ^11.4.6
         '@fastify/swagger': ^9.8.0
         '@fastify/swagger-ui': ^6.1.0
+        '@nestjs/throttler': ^6.5.0
     runtime:
         reflect-metadata: ^0.2.2
         rxjs: ^7.8.2

@@ -11,7 +11,7 @@
 		"lint:fix": "eslint . --fix",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
-		"gen": "protoc -I ./common/contracts/proto ./common/contracts/proto/*.proto --ts_proto_out=./common/contracts/generated --ts_proto_opt=nestJs=true,package=omit"
+		"gen": "protoc -I ./common/contracts/proto ./common/contracts/proto/*.proto --ts_proto_out=./common/contracts/generated --ts_proto_opt=nestJs=true,lowerCaseServiceMethods=true,package=omit"
 	},
 	"keywords": [],
 	"author": "kirillasyamov",
