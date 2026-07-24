@@ -13,8 +13,8 @@ service UserService {
 }
 
 message UserProfileData {
-	string firstName = 1;
-	string lastName = 2;
+	string login = 1;
+	string email = 2;
 	uint32 age = 3;
 	string bio = 4;
 }
@@ -25,10 +25,14 @@ message CreateUserRequest {
 
 message CreateUserResponse {
 	UserProfileData userProfile = 1;
+	string profileId = 2;
 }
 
 message GetUserRequest {
-  	string id = 1;
+	oneof identifier {
+  		string accountId = 1;
+		string login = 2;
+	}
 }
 
 message GetUserResponse {
