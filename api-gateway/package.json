@@ -33,7 +33,8 @@
 		"rxjs": "catalog:runtime",
 		"@nestjs/swagger": "catalog:nest",
 		"@fastify/swagger": "catalog:nest",
-		"@fastify/swagger-ui": "catalog:nest"
+		"@fastify/swagger-ui": "catalog:nest",
+		"@nestjs/throttler": "catalog:nest"
 	},
 	"devDependencies": {
 		"@swc/core": "catalog:development",
