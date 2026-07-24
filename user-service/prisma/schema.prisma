@@ -1,6 +1,6 @@
 generator client {
   	provider = "prisma-client"
-  	output   = "generated"
+  	output = "generated"
   	moduleFormat = "esm"
 }
 
@@ -9,12 +9,13 @@ datasource db {
 }
 
 model User {
-	id String @id
+	id String @id @default(nanoid())
 
-	firstName String @db.VarChar(100) @map("first_name")
-	lastName String @db.VarChar(100) @map("last_name")
-	age Int? @db.SmallInt
-	bio String? @db.VarChar(1000)
+	login String @unique @db.VarChar(100)
+	email String @unique
+
+	age Int @db.SmallInt
+	bio String @db.VarChar(1000)
 
 	createdAt DateTime @default(now())
 	updatedAt DateTime @updatedAt
