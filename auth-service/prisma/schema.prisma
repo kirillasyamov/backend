@@ -1,26 +1,22 @@
 generator client {
-  provider = "prisma-client"
-  output   = "generated"
-  moduleFormat = "esm"
+	provider = "prisma-client"
+	output = "generated"
+	moduleFormat = "esm"
 }
 
 datasource db {
-  provider = "postgresql"
+  	provider = "postgresql"
 }
 
 model Account {
 	id String @id @default(nanoid())
 
+	email String? @unique
+	isEmailVerified Boolean @default(false) @map("is_email_verified")
 	role Role @relation(fields: [roleId], references: [id])
 	roleId String @map("role_id")
 
-	phone String? @unique
-	email String? @unique
-
-	isPhoneVerified Boolean @default(false) @map("is_phone_verified")
-	isEmailVerified Boolean @default(false) @map("is_email_verified")
-
-	passwordHash String? @map("password_hash")
+	passwordHash String @map("password_hash")
 
 	sessions Session[]
 
@@ -36,9 +32,9 @@ model Session {
 
 	account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
 	accountId String @map("account_id")
-	deviceIdentifier String  @map("device_identifier")
+	deviceIdentifier String @map("device_identifier")
 
-	refreshTokenHash String @unique @map("refresh_token_hash")
+	refreshToken String @unique @map("refresh_token")
 	expiresAt DateTime @map("expires_at")
 	createdAt DateTime @default(now()) @map("created_at")
 
@@ -50,8 +46,6 @@ model Session {
 model Role {
   	id String @id @default(uuid())
 	name String @unique
-	description String? @db.VarChar(255)
-
 	accounts Account[]
 
 	@@map("role")
