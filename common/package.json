@@ -3,6 +3,12 @@
 	"version": "1.0.0",
 	"description": "",
 	"main": "index.js",
+	"exports": {
+		"./*": {
+			"types": "./dist/*.d.ts",
+			"default": "./*"
+		}
+	},
 	"keywords": [],
 	"author": "kirillasyamov",
 	"license": "ISC",
@@ -18,7 +24,9 @@
 		"class-transformer": "catalog:validation",
 		"class-validator": "catalog:validation",
 		"reflect-metadata": "catalog:runtime",
-		"rxjs": "catalog:runtime"
+		"rxjs": "catalog:runtime",
+		"joi": "catalog:validation",
+		"@nestjs/swagger": "catalog:nest"
 	},
 	"devDependencies": {
 		"@types/node": "catalog:development",

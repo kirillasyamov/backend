@@ -18,15 +18,11 @@
 	"license": "ISC",
 	"type": "module",
 	"devDependencies": {
-		"cross-env": "catalog:development",
 		"eslint": "catalog:development",
 		"eslint-config-prettier": "catalog:development",
 		"prettier": "catalog:development",
 		"protoc": "catalog:development",
-		"ts-node": "catalog:development",
 		"ts-proto": "catalog:development",
-		"tsconfig-paths": "catalog:development",
-		"tsx": "catalog:development",
 		"typescript": "catalog:development",
 		"typescript-eslint": "catalog:development"
 	}
