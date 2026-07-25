@@ -45,6 +45,7 @@
 		"@prisma/adapter-pg": "catalog:database",
 		"pg": "catalog:database",
 		"reflect-metadata": "catalog:runtime",
-		"rxjs": "catalog:runtime"
+		"rxjs": "catalog:runtime",
+		"@node-rs/argon2": "catalog:auth"
 	}
 }

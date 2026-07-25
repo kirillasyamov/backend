@@ -11,10 +11,11 @@ datasource db {
 model Account {
 	id String @id @default(nanoid())
 
-	email String? @unique
+	email String @unique
+	login String @unique
 	isEmailVerified Boolean @default(false) @map("is_email_verified")
 	role Role @relation(fields: [roleId], references: [id])
-	roleId String @map("role_id")
+	roleId Int @map("role_id")
 
 	passwordHash String @map("password_hash")
 
@@ -44,7 +45,7 @@ model Session {
 }
 
 model Role {
-  	id String @id @default(uuid())
+  	id Int @id @default(autoincrement())
 	name String @unique
 	accounts Account[]
 

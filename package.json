@@ -25,5 +25,9 @@
 		"ts-proto": "catalog:development",
 		"typescript": "catalog:development",
 		"typescript-eslint": "catalog:development"
+	},
+	"dependencies": {
+		"@grpc/grpc-js": "^1.14.4",
+		"@grpc/proto-loader": "^0.8.1"
 	}
 }
