@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'node:path';
 import { AuthServiceModule } from './auth-service.module';
+import { GrpcExceptionFilter } from 'common/filters/grpc-exception.filter';
 
 async function bootstrap() {
 	const app = await NestFactory.createMicroservice<MicroserviceOptions>(AuthServiceModule, {
@@ -13,6 +14,8 @@ async function bootstrap() {
 			url: `0.0.0.0:${process.env.GRPC_PORT ?? 50002}`,
 		},
 	});
+
+	app.useGlobalFilters(new GrpcExceptionFilter());
 
 	await app.listen();
 }

@@ -1,4 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { status } from '@grpc/grpc-js';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { AccountRepository } from './account.repository';
 import { SessionRepository } from './session.repository';
 import { RoleRepository } from './role.repository';
@@ -29,18 +32,30 @@ export class AuthService implements AuthServiceController {
 	) {}
 
 	public async createAccount(request: CreateAccountRequest): Promise<CreateAccountResponse> {
-		const account = await this.accountRepository.create({
-			email: request.email,
-			login: request.login,
-			passwordHash: await hash(request.password),
-			roleId: 1,
-		});
-		return {
-			accountId: account.id,
-			login: request.login,
-			email: account.email ?? '',
-			roleId: 1,
-		};
+		try {
+			const account = await this.accountRepository.create({
+				email: request.email,
+				login: request.login,
+				passwordHash: await hash(request.password),
+				roleId: 1,
+			});
+			return {
+				accountId: account.id,
+				login: request.login,
+				email: account.email ?? '',
+				roleId: 1,
+			};
+		} catch (error) {
+			if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+				const target = (error.meta?.target as string[]) ?? [];
+				const field = target.includes('email') ? 'email' : target.includes('login') ? 'login' : 'value';
+				throw new RpcException({
+					code: status.ALREADY_EXISTS,
+					message: `An account with this ${field} already exists`,
+				});
+			}
+			throw error;
+		}
 	}
 
 	public async deleteAccount(request: DeleteAccountRequest): Promise<void> {
