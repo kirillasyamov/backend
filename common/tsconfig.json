@@ -5,9 +5,9 @@
 		"rootDir": ".",
 		"composite": true,
 		"paths": {
-			"@/*": ["./modules/*", "./utils/*", "./contracts/*"]
+			"@/*": ["./modules/*", "./utils/*", "./contracts/*", "./enums/*", "./filters/*"]
 		},
 		"tsBuildInfoFile": "./dist/.tsbuildinfo"
 	},
-	"include": ["modules/**/*", "utils/**/*", "contracts/**/*", "configs/**/*"]
+	"include": ["modules/**/*", "utils/**/*", "contracts/**/*", "configs/**/*", "filters/**/*", "enums/**/*"]
 }
