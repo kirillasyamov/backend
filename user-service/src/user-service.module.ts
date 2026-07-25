@@ -5,13 +5,18 @@ import { UserRepository } from './user.repository';
 import { PrismaModule } from 'common/modules/prisma';
 import { PrismaClient } from '../prisma/generated/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { ConfigModule } from 'common/modules/config';
+import { prismaSchema } from 'common/configs/prisma.scheme';
+import { grpcSchema } from 'common/configs/grpc.scheme';
+import { prismaConfig } from 'common/configs/prisma.config';
 
 @Module({
 	imports: [
+		ConfigModule.forRoot(prismaSchema, grpcSchema),
 		PrismaModule.forRootAsync({
 			isGlobal: true,
 			clientClass: PrismaClient as any,
-			adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+			adapter: new PrismaPg({ connectionString: prismaConfig.connectionString }),
 		}),
 	],
 	controllers: [UserController],

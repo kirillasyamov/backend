@@ -8,7 +8,7 @@ export class GatewayController {
 	constructor(private readonly gatewayService: GatewayService) {}
 
 	@Get()
-	@ApiOperation({ summary: 'Welcome app endpoint' })
+	@ApiOperation({ summary: 'App welcome endpoint' })
 	getInfo(): object {
 		return { status: 'OK', timestamp: Date.now() };
 	}

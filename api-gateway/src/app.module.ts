@@ -5,11 +5,12 @@ import { GatewayController } from './app.controller';
 import { GatewayService } from './app.service';
 import { ConfigModule } from 'common/modules/config';
 import { apiGatewaySchema } from 'common/dist/configs/gateway.env.scheme.js';
+import { authSchema } from 'common/configs/auth.scheme';
 import { AuthModule } from './modules/auth/auth.module';
 import { GrpcToHttpExceptionFilter } from 'common/filters/grpc-to-http-exception.filter';
 
 @Module({
-	imports: [ConfigModule.forRoot(apiGatewaySchema), ThrottlerModule.forRoot([{ ttl: 60000, limit: 5 }]), AuthModule],
+	imports: [ConfigModule.forRoot(apiGatewaySchema, authSchema), ThrottlerModule.forRoot([{ ttl: 60000, limit: 5 }]), AuthModule],
 	controllers: [GatewayController],
 	providers: [
 		GatewayService,

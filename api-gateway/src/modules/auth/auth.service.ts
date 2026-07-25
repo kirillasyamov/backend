@@ -22,8 +22,7 @@ import type {
 } from 'common/contracts/generated/auth';
 
 import type { CreateUserRequest, CreateUserResponse, DeleteUserRequest } from 'common/contracts/generated/user';
-
-const EXP_DAYS = 30;
+import { authConfig } from 'common/configs/auth.config';
 
 interface SignUpRequest {
 	login: string;
@@ -56,7 +55,7 @@ export class AuthService implements OnModuleInit {
 			const account = await this.createAccount({ login, email, password });
 			accountId = account.accountId;
 			const createdAt = { seconds: Math.floor(Date.now()), nanos: 0 };
-			const expiresAt = { seconds: createdAt.seconds + EXP_DAYS * 24 * 60 * 60, nanos: 0 };
+			const expiresAt = { seconds: createdAt.seconds + authConfig.expDays * 24 * 60 * 60, nanos: 0 };
 			const session = await this.createSession({ accountId: account.accountId, roleId: 1, password, device, createdAt, expiresAt });
 			const user = await this.createUser({ userProfile: { login, email, age, bio } });
 			profileId = user.profileId;
