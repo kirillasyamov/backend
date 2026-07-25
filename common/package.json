@@ -26,7 +26,8 @@
 		"reflect-metadata": "catalog:runtime",
 		"rxjs": "catalog:runtime",
 		"joi": "catalog:validation",
-		"@nestjs/swagger": "catalog:nest"
+		"@nestjs/swagger": "catalog:nest",
+		"ioredis": "catalog:database"
 	},
 	"devDependencies": {
 		"@types/node": "catalog:development",
