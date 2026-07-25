@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import type { DynamicModule, Provider } from '@nestjs/common';
-import { PrismaService } from './prisma.service';
 import type { PrismaModuleAsyncOptions } from './prisma.interfaces';
-import { PRISMA_CLIENT_CLASS, PRISMA_ADAPTER } from './prisma.tokens';
+import { PRISMA_CLIENT_CLASS, PRISMA_ADAPTER, PRISMA_CLIENT } from './prisma.tokens';
+import type { PrismaClientConstructor, PrismaClientLike } from './prisma.interfaces';
+import type { SqlDriverAdapterFactory } from '@prisma/client/runtime/client';
 
 @Module({})
 export class PrismaModule {
@@ -15,13 +16,20 @@ export class PrismaModule {
 			provide: PRISMA_CLIENT_CLASS,
 			useValue: options.clientClass,
 		};
+		const prismaClientProvider: Provider = {
+			provide: PRISMA_CLIENT,
+			useFactory: (ClientClass: PrismaClientConstructor, adapter: SqlDriverAdapterFactory) => {
+				return new ClientClass({ adapter });
+			},
+			inject: [PRISMA_CLIENT_CLASS, PRISMA_ADAPTER],
+		};
 
 		return {
 			module: PrismaModule,
 			global: options.isGlobal ?? false,
 			imports: options.imports ?? [],
-			providers: [adapterProvider, clientClassProvider, PrismaService],
-			exports: [PrismaService],
+			providers: [adapterProvider, clientClassProvider, prismaClientProvider],
+			exports: [PRISMA_CLIENT],
 		};
 	}
 }

@@ -9,7 +9,7 @@ import type { PrismaClientConstructor } from './prisma.interfaces';
 @Injectable()
 export class PrismaService implements OnModuleInit, OnApplicationShutdown {
 	private isConnected = false;
-	private readonly client: PrismaClientLike;
+	private readonly _client: PrismaClientLike;
 	private readonly logger: Logger;
 
 	constructor(
@@ -18,15 +18,19 @@ export class PrismaService implements OnModuleInit, OnApplicationShutdown {
 		@Inject(PRISMA_CLIENT_CLASS)
 		ClientClass: PrismaClientConstructor,
 	) {
-		this.client = new ClientClass({ adapter });
+		this._client = new ClientClass({ adapter });
 		this.logger = new Logger(PrismaService.name + adapter.provider.toUpperCase());
+	}
+
+	get client(): PrismaClientLike {
+		return this._client;
 	}
 
 	async onModuleInit(): Promise<void> {
 		const start = Date.now();
 		this.logger.log('Connecting to database');
 		try {
-			await this.client.$connect();
+			await this._client.$connect();
 			const ms = Date.now() - start;
 			this.logger.log(`Database connection established (time ${ms}ms).`);
 		} catch (error) {
@@ -40,7 +44,7 @@ export class PrismaService implements OnModuleInit, OnApplicationShutdown {
 		if (!this.isConnected) return this.logger.log(`Database connection closed.`);
 		this.logger.log('Disconnecting from database');
 		try {
-			await this.client.$disconnect();
+			await this._client.$disconnect();
 			this.isConnected = false;
 			this.logger.log('Database connection closed.');
 		} catch (error) {

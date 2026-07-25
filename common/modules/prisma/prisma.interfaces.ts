@@ -14,6 +14,6 @@ export interface PrismaModuleAsyncOptions {
 	clientClass: Type<any>;
 	imports?: ModuleMetadata['imports'];
 	inject?: any[];
-	useFactory: (...args: any[]) => PrismaClientLike | Promise<PrismaClientLike>;
+	useFactory?: (...args: any[]) => PrismaClientLike | Promise<PrismaClientLike>;
 	adapter: SqlDriverAdapterFactory;
 }
