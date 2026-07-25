@@ -34,6 +34,7 @@
 		"dotenv": "catalog:config",
 		"@grpc/grpc-js": "catalog:grpc",
 		"@grpc/proto-loader": "catalog:grpc",
+		"grpc-health-check": "catalog:grpc",
 		"@nestjs/common": "catalog:nest",
 		"@nestjs/config": "catalog:nest",
 		"@nestjs/core": "catalog:nest",

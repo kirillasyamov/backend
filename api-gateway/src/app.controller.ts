@@ -1,14 +1,21 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { GatewayService } from './app.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('App')
 @Controller()
 export class GatewayController {
-	constructor(private readonly apiGatewayService: GatewayService) {}
+	constructor(private readonly gatewayService: GatewayService) {}
 
 	@Get()
+	@ApiOperation({ summary: 'Welcome app endpoint' })
 	getInfo(): object {
 		return { status: 'OK', timestamp: Date.now() };
+	}
+
+	@Get('health')
+	@ApiOperation({ summary: 'Health check' })
+	check() {
+		return this.gatewayService.healthCheck();
 	}
 }

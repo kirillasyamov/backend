@@ -7,12 +7,15 @@ import type { CreateUserRequest, GetUserRequest, GetUsersRequest, UpdateUserRequ
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
-	@GrpcMethod('UserService', 'CreateUser')
+	@GrpcMethod('Health', 'Check')
+	public async check(): Promise<{ status: number }> {
+		return { status: 1 };
+	}
+
 	public async createUser(data: CreateUserRequest) {
 		return this.userService.createUser(data);
 	}
 
-	@GrpcMethod('UserService', 'DeleteUser')
 	public async deleteUser(data: DeleteUserRequest) {
 		return this.userService.deleteUser(data);
 	}

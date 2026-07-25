@@ -1,4 +1,5 @@
 import { Controller, Inject } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
 import type {
 	AuthServiceController as AuthServiceControllerInterface,
 	CreateAccountRequest,
@@ -21,6 +22,11 @@ import { AuthService } from './auth-service.service';
 @AuthServiceControllerMethods()
 export class AuthServiceController implements AuthServiceControllerInterface {
 	constructor(@Inject(AuthService) private readonly authService: AuthService) {}
+
+	@GrpcMethod('Health', 'Check')
+	public async check(): Promise<{ status: number }> {
+		return { status: 1 };
+	}
 
 	public async createAccount(request: CreateAccountRequest): Promise<CreateAccountResponse> {
 		return this.authService.createAccount(request);

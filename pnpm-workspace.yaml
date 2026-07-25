@@ -34,6 +34,7 @@ catalogs:
     grpc:
         '@grpc/grpc-js': ^1.14.4
         '@grpc/proto-loader': ^0.8.1
+        'grpc-health-check': ^2.1.0
     nest:
         '@nestjs/common': ^11.1.27
         '@nestjs/config': ^4.0.4
