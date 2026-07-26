@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { status } from '@grpc/grpc-js';
 import { SignJWT, jwtVerify, importPKCS8, importSPKI, type JWTPayload } from 'jose';
 import { randomUUID } from 'node:crypto';
 import type { GenerateJWTRequest, GenerateJWTResponse, ValidateJWTRequest, ValidateJWTResponse, InvalidateJWTRequest } from 'common/contracts/generated/token';
@@ -14,20 +16,28 @@ export class TokenService {
 	constructor(private readonly blacklist: BlacklistService) {}
 
 	public async generateJwt(request: GenerateJWTRequest): Promise<GenerateJWTResponse> {
-		const privateKey = await importPKCS8(jwtConfig.privateKey, this.alg);
-		const jwt = await new SignJWT({ ...request.extraClaims })
-			.setProtectedHeader({ alg: this.alg, kid: this.kid })
-			.setSubject(request.sub)
-			.setAudience(request.aud)
-			.setIssuer(jwtConfig.issuer)
-			.setJti(randomUUID())
-			.setIssuedAt()
-			.setExpirationTime(`${request.ttlSeconds}s`)
-			.sign(privateKey);
+		try {
+			const privateKey = await importPKCS8(jwtConfig.privateKey, this.alg);
+			const jwt = await new SignJWT({ ...request.extraClaims })
+				.setProtectedHeader({ alg: this.alg, kid: this.kid })
+				.setSubject(request.sub)
+				.setAudience(request.aud)
+				.setIssuer(jwtConfig.issuer)
+				.setJti(randomUUID())
+				.setIssuedAt()
+				.setExpirationTime(`${request.ttlSeconds}s`)
+				.sign(privateKey);
 
-		this.logger.debug(`Generated JWT for sub=${request.sub}, aud=${request.aud}`);
+			this.logger.debug(`Generated JWT for sub=${request.sub}, aud=${request.aud}`);
 
-		return { jsonWebToken: jwt };
+			return { jsonWebToken: jwt };
+		} catch (error) {
+			if (error instanceof RpcException) throw error;
+			throw new RpcException({
+				code: status.INTERNAL,
+				message: 'Failed to generate JWT',
+			});
+		}
 	}
 
 	public async validateJwt(request: ValidateJWTRequest): Promise<ValidateJWTResponse> {
@@ -37,7 +47,8 @@ export class TokenService {
 			const publicKey = await importSPKI(jwtConfig.publicKey, this.alg);
 			await jwtVerify(request.jsonWebToken, publicKey, { issuer: jwtConfig.issuer });
 			return { isValid: true };
-		} catch {
+		} catch (error) {
+			if (error instanceof RpcException) throw error;
 			return { isValid: false };
 		}
 	}
@@ -54,8 +65,12 @@ export class TokenService {
 
 			await this.blacklist.addToBlacklist(request.jsonWebToken, ttl);
 			this.logger.debug(`Invalidated JWT with jti=${payload.jti}, ttl=${ttl}s`);
-		} catch {
-			this.logger.warn('Failed to invalidate JWT');
+		} catch (error) {
+			if (error instanceof RpcException) throw error;
+			throw new RpcException({
+				code: status.INTERNAL,
+				message: 'Failed to invalidate JWT',
+			});
 		}
 	}
 
