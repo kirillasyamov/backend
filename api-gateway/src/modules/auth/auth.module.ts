@@ -38,6 +38,20 @@ const healthProtoPath = require.resolve('grpc-health-check/proto/health/v1/healt
 					},
 				}),
 			},
+			{
+				name: 'TOKEN_PACKAGE',
+				useFactory: () => ({
+					transport: Transport.GRPC,
+					options: {
+						package: ['token.v1', 'grpc.health.v1'],
+						protoPath: [
+							'../common/contracts/proto/token.proto',
+							healthProtoPath,
+						],
+						url: 'localhost:50004',
+					},
+				}),
+			},
 		]),
 	],
 	controllers: [AuthController],

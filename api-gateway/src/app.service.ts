@@ -12,15 +12,21 @@ export class GatewayService {
 	constructor(
 		@Inject('AUTH_PACKAGE') private authClient: ClientGrpc,
 		@Inject('USER_PACKAGE') private userClient: ClientGrpc,
+		@Inject('TOKEN_PACKAGE') private tokenClient: ClientGrpc,
 	) {}
 
 	async healthCheck() {
-		const [authHealth, userHealth] = await Promise.all([this.ping(this.authClient), this.ping(this.userClient)]);
+		const [authHealth, userHealth, tokenHealth] = await Promise.all([
+			this.ping(this.authClient),
+			this.ping(this.userClient),
+			this.ping(this.tokenClient),
+		]);
 
 		return {
 			'api-gateway': { health: true },
 			'auth-service': { health: authHealth },
 			'user-service': { health: userHealth },
+			'token-service': { health: tokenHealth },
 		};
 	}
 
