@@ -21,6 +21,10 @@ import type {
 	RefreshSessionResponse,
 	GetSessionsRequest,
 	GetSessionsResponse,
+	GetAccountByLoginRequest,
+	GetAccountByLoginResponse,
+	GetAccountByEmailRequest,
+	GetAccountByEmailResponse,
 } from 'common/contracts/generated/auth';
 import type { TokenServiceClient } from 'common/contracts/generated/token';
 import { hash, verify } from '@node-rs/argon2';
@@ -166,6 +170,46 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 		);
 
 		return { tokens: { accessToken: jsonWebToken, refreshToken: newSession.refreshToken } };
+	}
+
+	public async getAccountByLogin(
+		request: GetAccountByLoginRequest,
+	): Promise<GetAccountByLoginResponse> {
+		const account = await this.accountRepository.findByLogin(request.login);
+
+		if (!account) {
+			throw new RpcException({
+				code: status.NOT_FOUND,
+				message: 'Account not found',
+			});
+		}
+
+		return {
+			accountId: account.id,
+			login: account.login,
+			email: account.email,
+			roleId: account.roleId,
+		};
+	}
+
+	public async getAccountByEmail(
+		request: GetAccountByEmailRequest,
+	): Promise<GetAccountByEmailResponse> {
+		const account = await this.accountRepository.findByEmail(request.email);
+
+		if (!account) {
+			throw new RpcException({
+				code: status.NOT_FOUND,
+				message: 'Account not found',
+			});
+		}
+
+		return {
+			accountId: account.id,
+			login: account.login,
+			email: account.email,
+			roleId: account.roleId,
+		};
 	}
 
 	public async getSessions(request: GetSessionsRequest): Promise<GetSessionsResponse> {

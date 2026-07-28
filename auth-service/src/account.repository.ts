@@ -21,6 +21,10 @@ export class AccountRepository {
 		return this.prisma.account.findUnique({ where: { login } });
 	}
 
+	public async findByEmail(email: string): Promise<Account | null> {
+		return this.prisma.account.findUnique({ where: { email } });
+	}
+
 	public async findById(id: string): Promise<Account | null> {
 		return this.prisma.account.findUnique({ where: { id } });
 	}

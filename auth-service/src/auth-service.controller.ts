@@ -14,6 +14,10 @@ import type {
 	RefreshSessionResponse,
 	GetSessionsRequest,
 	GetSessionsResponse,
+	GetAccountByLoginRequest,
+	GetAccountByLoginResponse,
+	GetAccountByEmailRequest,
+	GetAccountByEmailResponse,
 } from 'common/contracts/generated/auth';
 import { AuthServiceControllerMethods } from 'common/contracts/generated/auth';
 import { AuthService } from './auth-service.service';
@@ -54,6 +58,18 @@ export class AuthServiceController implements AuthServiceControllerInterface {
 
 	public async refreshSession(request: RefreshSessionRequest): Promise<RefreshSessionResponse> {
 		return this.authService.refreshSession(request);
+	}
+
+	public async getAccountByLogin(
+		request: GetAccountByLoginRequest,
+	): Promise<GetAccountByLoginResponse> {
+		return this.authService.getAccountByLogin(request);
+	}
+
+	public async getAccountByEmail(
+		request: GetAccountByEmailRequest,
+	): Promise<GetAccountByEmailResponse> {
+		return this.authService.getAccountByEmail(request);
 	}
 
 	public async getSessions(request: GetSessionsRequest): Promise<GetSessionsResponse> {
