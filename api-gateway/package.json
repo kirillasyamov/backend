@@ -34,6 +34,7 @@
 		"class-validator": "catalog:validation",
 		"common": "workspace:*",
 		"grpc-health-check": "catalog:grpc",
+		"jose": "catalog:auth",
 		"reflect-metadata": "catalog:runtime",
 		"rxjs": "catalog:runtime"
 	},
