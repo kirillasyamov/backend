@@ -39,6 +39,9 @@
 		"class-transformer": "catalog:validation",
 		"class-validator": "catalog:validation",
 		"reflect-metadata": "catalog:runtime",
-		"rxjs": "catalog:runtime"
+		"rxjs": "catalog:runtime",
+		"grpc-health-check": "catalog:grpc",
+		"jose": "catalog:auth",
+		"ioredis": "catalog:database"
 	}
 }

@@ -16,6 +16,9 @@ service AuthService {
 	rpc RevokeSession (RevokeSessionRequest) returns (google.protobuf.Empty);
 	rpc RefreshSession (RefreshSessionRequest) returns (RefreshSessionResponse);
 	rpc GetSessions (GetSessionsRequest) returns (GetSessionsResponse);
+
+	rpc GetAccountByLogin (GetAccountByLoginRequest) returns (GetAccountByLoginResponse);
+	rpc GetAccountByEmail (GetAccountByEmailRequest) returns (GetAccountByEmailResponse);
 }
 
 message CreateAccountRequest {
@@ -91,5 +94,27 @@ message RefreshSessionResponse {
 
 message RevokeSessionRequest {
 	string sessionId = 1;
+}
+
+message GetAccountByLoginRequest {
+  string login = 1;
+}
+
+message GetAccountByLoginResponse {
+  string accountId = 1;
+  string login = 2;
+  string email = 3;
+  uint32 roleId = 4;
+}
+
+message GetAccountByEmailRequest {
+  string email = 1;
+}
+
+message GetAccountByEmailResponse {
+  string accountId = 1;
+  string login = 2;
+  string email = 3;
+  uint32 roleId = 4;
 }
 

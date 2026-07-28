@@ -1,5 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
+import type { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { AccountRepository } from './account.repository';
@@ -19,17 +21,30 @@ import type {
 	RefreshSessionResponse,
 	GetSessionsRequest,
 	GetSessionsResponse,
+	GetAccountByLoginRequest,
+	GetAccountByLoginResponse,
+	GetAccountByEmailRequest,
+	GetAccountByEmailResponse,
 } from 'common/contracts/generated/auth';
-import { hash } from '@node-rs/argon2';
+import type { TokenServiceClient } from 'common/contracts/generated/token';
+import { hash, verify } from '@node-rs/argon2';
 import { randomBytes } from 'crypto';
+import { authConfig } from 'common/configs/auth.config';
 
 @Injectable()
-export class AuthService implements AuthServiceController {
+export class AuthService implements AuthServiceController, OnModuleInit {
+	private tokenGrpcService!: TokenServiceClient;
+
 	constructor(
 		@Inject(AccountRepository) private readonly accountRepository: AccountRepository,
 		@Inject(SessionRepository) private readonly sessionRepository: SessionRepository,
 		@Inject(RoleRepository) private readonly roleRepository: RoleRepository,
+		@Inject('TOKEN_PACKAGE') private readonly tokenClient: ClientGrpc,
 	) {}
+
+	onModuleInit() {
+		this.tokenGrpcService = this.tokenClient.getService<TokenServiceClient>('TokenService');
+	}
 
 	public async createAccount(request: CreateAccountRequest): Promise<CreateAccountResponse> {
 		try {
@@ -59,26 +74,62 @@ export class AuthService implements AuthServiceController {
 	}
 
 	public async deleteAccount(request: DeleteAccountRequest): Promise<void> {
-		if (request.id) await this.accountRepository.delete(request.id);
+		if (!request.id) return;
+		await this.accountRepository.delete(request.id);
 	}
 
 	public async changePassword(request: ChangePasswordRequest): Promise<void> {
-		await this.accountRepository.updatePassword(request.accountId, request.newPassword);
+		const account = await this.accountRepository.findById(request.accountId);
+		if (!account) {
+			throw new RpcException({ code: status.NOT_FOUND, message: 'Account not found' });
+		}
+
+		const isValid = await verify(account.passwordHash, request.oldPassword);
+		if (!isValid) {
+			throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'Current password is incorrect' });
+		}
+
+		await this.accountRepository.updatePassword(request.accountId, await hash(request.newPassword));
+		await this.sessionRepository.deleteByAccountId(request.accountId);
 	}
 
 	public async changeEmail(request: ChangeEmailRequest): Promise<void> {
+		const account = await this.accountRepository.findById(request.accountId);
+		if (!account) {
+			throw new RpcException({ code: status.NOT_FOUND, message: 'Account not found' });
+		}
 		await this.accountRepository.updateEmail(request.accountId, request.newEmail);
 	}
 
 	public async createSession(request: CreateSessionRequest): Promise<CreateSessionResponse> {
+		const account = await this.accountRepository.findById(request.accountId);
+		if (!account) {
+			throw new RpcException({ code: status.NOT_FOUND, message: 'Account not found' });
+		}
+
+		const isValid = await verify(account.passwordHash, request.password);
+		if (!isValid) {
+			throw new RpcException({ code: status.UNAUTHENTICATED, message: 'Invalid password' });
+		}
+
 		const session = await this.sessionRepository.create({
 			accountId: request.accountId,
 			deviceIdentifier: request.device,
 			refreshToken: randomBytes(48).toString('base64'),
-			expiresAt: new Date((request.expiresAt?.seconds ?? 0) * 1000),
+			expiresAt: new Date(Date.now() + authConfig.ttlSeconds * 1000),
 		});
+
+		const { jsonWebToken } = await firstValueFrom(
+			this.tokenGrpcService.generateJwt({
+				sub: request.accountId,
+				aud: 'api-gateway',
+				extraClaims: { sid: session.id },
+				ttlSeconds: authConfig.ttlSeconds,
+			}),
+		);
+
 		return {
-			tokens: { accessToken: '(mock realization)', refreshToken: session.refreshToken },
+			tokens: { accessToken: jsonWebToken, refreshToken: session.refreshToken },
 			expiresAt: request.expiresAt,
 			createdAt: request.createdAt,
 		};
@@ -89,12 +140,76 @@ export class AuthService implements AuthServiceController {
 	}
 
 	public async refreshSession(request: RefreshSessionRequest): Promise<RefreshSessionResponse> {
-		// todo
-		const updated = {
-			access: '',
-			refresh: randomBytes(48).toString('base64'),
+		const session = await this.sessionRepository.findByRefreshToken(request.refreshToken);
+		if (!session) {
+			throw new RpcException({ code: status.UNAUTHENTICATED, message: 'Invalid refresh token' });
+		}
+
+		if (new Date() > session.expiresAt) {
+			await this.sessionRepository.delete(session.id);
+			throw new RpcException({ code: status.UNAUTHENTICATED, message: 'Refresh token expired' });
+		}
+
+		const newRefreshToken = randomBytes(48).toString('base64');
+
+		await this.sessionRepository.delete(session.id);
+		const newSession = await this.sessionRepository.create({
+			accountId: session.accountId,
+			deviceIdentifier: session.deviceIdentifier,
+			refreshToken: newRefreshToken,
+			expiresAt: new Date(Date.now() + authConfig.ttlSeconds * 1000),
+		});
+
+		const { jsonWebToken } = await firstValueFrom(
+			this.tokenGrpcService.generateJwt({
+				sub: session.accountId,
+				aud: 'api-gateway',
+				extraClaims: { sid: newSession.id },
+				ttlSeconds: authConfig.ttlSeconds,
+			}),
+		);
+
+		return { tokens: { accessToken: jsonWebToken, refreshToken: newSession.refreshToken } };
+	}
+
+	public async getAccountByLogin(
+		request: GetAccountByLoginRequest,
+	): Promise<GetAccountByLoginResponse> {
+		const account = await this.accountRepository.findByLogin(request.login);
+
+		if (!account) {
+			throw new RpcException({
+				code: status.NOT_FOUND,
+				message: 'Account not found',
+			});
+		}
+
+		return {
+			accountId: account.id,
+			login: account.login,
+			email: account.email,
+			roleId: account.roleId,
 		};
-		return { tokens: { accessToken: updated.access, refreshToken: updated.refresh } };
+	}
+
+	public async getAccountByEmail(
+		request: GetAccountByEmailRequest,
+	): Promise<GetAccountByEmailResponse> {
+		const account = await this.accountRepository.findByEmail(request.email);
+
+		if (!account) {
+			throw new RpcException({
+				code: status.NOT_FOUND,
+				message: 'Account not found',
+			});
+		}
+
+		return {
+			accountId: account.id,
+			login: account.login,
+			email: account.email,
+			roleId: account.roleId,
+		};
 	}
 
 	public async getSessions(request: GetSessionsRequest): Promise<GetSessionsResponse> {
