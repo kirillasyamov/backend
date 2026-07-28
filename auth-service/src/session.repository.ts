@@ -14,11 +14,20 @@ export class SessionRepository {
 		return this.prisma.session.findUnique({ where: { id } });
 	}
 
+	public async findByRefreshToken(refreshToken: string): Promise<Session | null> {
+		return this.prisma.session.findUnique({ where: { refreshToken } });
+	}
+
 	public async findManyByAccountId(accountId: string): Promise<Session[]> {
 		return this.prisma.session.findMany({ where: { accountId } });
 	}
 
 	public async delete(id: string): Promise<Session> {
 		return this.prisma.session.delete({ where: { id } });
+	}
+
+	public async deleteByAccountId(accountId: string): Promise<number> {
+		const result = await this.prisma.session.deleteMany({ where: { accountId } });
+		return result.count;
 	}
 }

@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PRISMA_CLIENT } from 'common/modules/prisma';
 import { type PrismaClient, Account } from '../prisma/generated/client';
 
-interface registrationData {
+export interface RegistrationData {
 	email: string;
 	login: string;
 	passwordHash: string;
@@ -13,7 +13,7 @@ interface registrationData {
 export class AccountRepository {
 	constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
 
-	public async create(data: registrationData): Promise<Account> {
+	public async create(data: RegistrationData): Promise<Account> {
 		return this.prisma.account.create({ data });
 	}
 

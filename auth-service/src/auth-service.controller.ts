@@ -1,4 +1,4 @@
-import { Controller, Inject } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import type {
 	AuthServiceController as AuthServiceControllerInterface,
@@ -21,7 +21,7 @@ import { AuthService } from './auth-service.service';
 @Controller()
 @AuthServiceControllerMethods()
 export class AuthServiceController implements AuthServiceControllerInterface {
-	constructor(@Inject(AuthService) private readonly authService: AuthService) {}
+	constructor(private readonly authService: AuthService) {}
 
 	@GrpcMethod('Health', 'Check')
 	public async check(): Promise<{ status: number }> {
