@@ -13,6 +13,7 @@ import type {
 	CreateSessionRequest,
 	CreateSessionResponse,
 	RevokeSessionRequest,
+	RefreshSessionRequest,
 } from 'common/contracts/generated/auth';
 
 import type { CreateUserRequest, CreateUserResponse, DeleteUserRequest } from 'common/contracts/generated/user';
@@ -77,5 +78,10 @@ export class AuthService implements OnModuleInit {
 
 	revokeSession(request: RevokeSessionRequest): Promise<Empty> {
 		return firstValueFrom(this.authGrpcService.revokeSession(request));
+	}
+
+	async refreshSession(request: RefreshSessionRequest): Promise<TokenPair> {
+		const { tokens } = await firstValueFrom(this.authGrpcService.refreshSession(request));
+		return tokens;
 	}
 }
