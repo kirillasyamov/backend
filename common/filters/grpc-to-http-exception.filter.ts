@@ -1,4 +1,4 @@
-import { Catch, ExceptionFilter, ArgumentsHost, HttpStatus, Logger } from '@nestjs/common';
+import { Catch, ExceptionFilter, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { grpcToHttpStatus } from './grpc-to-http-map';
 
@@ -9,6 +9,15 @@ export class GrpcToHttpExceptionFilter implements ExceptionFilter {
 	catch(exception: unknown, host: ArgumentsHost) {
 		const ctx = host.switchToHttp();
 		const response = ctx.getResponse();
+
+		if (exception instanceof HttpException) {
+			const status = exception.getStatus();
+			const res = exception.getResponse();
+			const message = typeof res === 'string' ? res : (res as Record<string, unknown>).message ?? exception.message;
+
+			response.status(status).send({ statusCode: status, message });
+			return;
+		}
 
 		let code: number | undefined;
 		let message = 'Unknown error';
