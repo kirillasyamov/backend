@@ -48,7 +48,14 @@ export class AuthService implements OnModuleInit {
 		try {
 			const account = await this.createAccount({ login, email, password });
 			accountId = account.accountId;
-			const session = await this.createSession({ accountId: account.accountId, roleId: 1, password, device });
+			const session = await this.createSession({
+				accountId: account.accountId,
+				roleId: 1,
+				password,
+				device,
+				expiresAt: undefined,
+				createdAt: undefined,
+			});
 			const user = await this.createUser({ userProfile: { login, email, age, bio } });
 			profileId = user.profileId;
 			if (session.tokens) return session.tokens;
@@ -82,7 +89,37 @@ export class AuthService implements OnModuleInit {
 
 	async refreshSession(request: RefreshSessionRequest): Promise<TokenPair> {
 		const { tokens } = await firstValueFrom(this.authGrpcService.refreshSession(request));
+		if (!tokens) throw new Error('Failed to refresh session');
 		return tokens;
+	}
+
+	public async signIn(request: {
+		login?: string;
+		email?: string;
+		password: string;
+		device: string;
+	}): Promise<TokenPair> {
+		const { login, email, password, device } = request;
+
+		if (!login && !email) {
+			throw new Error('Either login or email must be provided');
+		}
+
+		const account = login
+			? await firstValueFrom(this.authGrpcService.getAccountByLogin({ login }))
+			: await firstValueFrom(this.authGrpcService.getAccountByEmail({ email: email! }));
+
+		const { tokens } = await this.createSession({
+				accountId: account.accountId,
+				roleId: account.roleId,
+				password,
+				device,
+				expiresAt: undefined,
+				createdAt: undefined,
+			});
+
+		if (tokens) return tokens;
+		throw new Error('Failed to create access and refresh tokens');
 	}
 
 	async signOut(sessionId: string): Promise<void> {

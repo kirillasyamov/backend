@@ -2,6 +2,7 @@ import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { SignUpDto } from './dto/signup.dto';
+import { SignInDto } from './dto/signin.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
@@ -19,6 +20,15 @@ export class AuthController {
 	@HttpCode(HttpStatus.OK)
 	public async signUp(@Body() dto: SignUpDto) {
 		return await this.authService.signUp(dto);
+	}
+
+	@ApiOperation({ summary: 'Create new session' })
+	@ApiBody({ type: SignInDto })
+	@Public()
+	@Post('signin')
+	@HttpCode(HttpStatus.OK)
+	public async signIn(@Body() dto: SignInDto) {
+		return await this.authService.signIn(dto);
 	}
 
 	@ApiOperation({ summary: 'Refresh session' })
