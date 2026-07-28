@@ -84,4 +84,8 @@ export class AuthService implements OnModuleInit {
 		const { tokens } = await firstValueFrom(this.authGrpcService.refreshSession(request));
 		return tokens;
 	}
+
+	async signOut(sessionId: string): Promise<void> {
+		await this.revokeSession({ sessionId });
+	}
 }
