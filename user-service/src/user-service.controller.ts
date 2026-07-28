@@ -1,9 +1,23 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { RpcException } from '@nestjs/microservices';
+import { status } from '@grpc/grpc-js';
 import { UserService } from './user-service.service';
-import type { CreateUserRequest, GetUserRequest, GetUsersRequest, UpdateUserRequest, DeleteUserRequest } from 'common/contracts/generated/user';
+import type {
+	CreateUserRequest,
+	CreateUserResponse,
+	GetUserRequest,
+	GetUserResponse,
+	GetUsersRequest,
+	GetUsersResponse,
+	UpdateUserRequest,
+	UpdateUserResponse,
+	DeleteUserRequest,
+} from 'common/contracts/generated/user';
+import { UserServiceControllerMethods } from 'common/contracts/generated/user';
 
 @Controller()
+@UserServiceControllerMethods()
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
@@ -12,11 +26,23 @@ export class UserController {
 		return { status: 1 };
 	}
 
-	public async createUser(data: CreateUserRequest) {
+	public async createUser(data: CreateUserRequest): Promise<CreateUserResponse> {
 		return this.userService.createUser(data);
 	}
 
-	public async deleteUser(data: DeleteUserRequest) {
+	public async getUser(_data: GetUserRequest): Promise<GetUserResponse> {
+		throw new RpcException({ code: status.UNIMPLEMENTED, message: 'Method GetUser not implemented' });
+	}
+
+	public async getUsers(_data: GetUsersRequest): Promise<GetUsersResponse> {
+		throw new RpcException({ code: status.UNIMPLEMENTED, message: 'Method GetUsers not implemented' });
+	}
+
+	public async updateUser(_data: UpdateUserRequest): Promise<UpdateUserResponse> {
+		throw new RpcException({ code: status.UNIMPLEMENTED, message: 'Method UpdateUser not implemented' });
+	}
+
+	public async deleteUser(data: DeleteUserRequest): Promise<void> {
 		return this.userService.deleteUser(data);
 	}
 }

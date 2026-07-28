@@ -205,6 +205,9 @@ importers:
       grpc-health-check:
         specifier: catalog:grpc
         version: 2.1.0
+      jose:
+        specifier: catalog:auth
+        version: 6.2.4
       reflect-metadata:
         specifier: catalog:runtime
         version: 0.2.2
