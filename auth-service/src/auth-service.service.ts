@@ -119,7 +119,7 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 			this.tokenGrpcService.generateJwt({
 				sub: request.accountId,
 				aud: 'api-gateway',
-				extraClaims: {},
+				extraClaims: { sid: session.id },
 				ttlSeconds: authConfig.ttlSeconds,
 			}),
 		);
@@ -148,15 +148,6 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 
 		const newRefreshToken = randomBytes(48).toString('base64');
 
-		const { jsonWebToken } = await firstValueFrom(
-			this.tokenGrpcService.generateJwt({
-				sub: session.accountId,
-				aud: 'api-gateway',
-				extraClaims: {},
-				ttlSeconds: authConfig.ttlSeconds,
-			}),
-		);
-
 		await this.sessionRepository.delete(session.id);
 		const newSession = await this.sessionRepository.create({
 			accountId: session.accountId,
@@ -164,6 +155,15 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 			refreshToken: newRefreshToken,
 			expiresAt: new Date(Date.now() + authConfig.ttlSeconds * 1000),
 		});
+
+		const { jsonWebToken } = await firstValueFrom(
+			this.tokenGrpcService.generateJwt({
+				sub: session.accountId,
+				aud: 'api-gateway',
+				extraClaims: { sid: newSession.id },
+				ttlSeconds: authConfig.ttlSeconds,
+			}),
+		);
 
 		return { tokens: { accessToken: jsonWebToken, refreshToken: newSession.refreshToken } };
 	}
