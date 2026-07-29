@@ -52,10 +52,9 @@ message GetUsersResponse {
 }
 
 message UpdateUserRequest {
-	optional string firstName = 1;
-	optional string lastName = 2;
-	optional uint32 age = 3;
-	optional string bio = 4;
+	string login = 1;
+	optional uint32 age = 2;
+	optional string bio = 3;
 }
 
 message UpdateUserResponse {

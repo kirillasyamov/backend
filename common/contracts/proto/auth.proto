@@ -19,6 +19,7 @@ service AuthService {
 
 	rpc GetAccountByLogin (GetAccountByLoginRequest) returns (GetAccountByLoginResponse);
 	rpc GetAccountByEmail (GetAccountByEmailRequest) returns (GetAccountByEmailResponse);
+	rpc GetAccountById (GetAccountByIdRequest) returns (GetAccountByIdResponse);
 }
 
 message CreateAccountRequest {
@@ -112,6 +113,17 @@ message GetAccountByEmailRequest {
 }
 
 message GetAccountByEmailResponse {
+  string accountId = 1;
+  string login = 2;
+  string email = 3;
+  uint32 roleId = 4;
+}
+
+message GetAccountByIdRequest {
+  string id = 1;
+}
+
+message GetAccountByIdResponse {
   string accountId = 1;
   string login = 2;
   string email = 3;
