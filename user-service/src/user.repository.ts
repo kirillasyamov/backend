@@ -7,7 +7,23 @@ import { User } from '../prisma/generated/client';
 export class UserRepository {
 	constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
 
-	public async create(data: { login: string; email: string; age: number; bio: string }): Promise<User> {
+	public async reactivateOrCreate(data: { login: string; email: string; age: number; bio: string }): Promise<User> {
+		const existing = await this.prisma.user.findFirst({
+			where: {
+				OR: [
+					{ login: data.login, deletedAt: { not: null } },
+					{ email: data.email, deletedAt: { not: null } },
+				],
+			},
+		});
+
+		if (existing) {
+			return this.prisma.user.update({
+				where: { id: existing.id },
+				data: { ...data, deletedAt: null },
+			});
+		}
+
 		return this.prisma.user.create({ data });
 	}
 

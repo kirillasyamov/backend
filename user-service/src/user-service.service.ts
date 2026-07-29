@@ -12,7 +12,7 @@ export class UserService {
 	public async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
 		try {
 			const profile = request.userProfile!;
-			const user = await this.userRepository.create(profile);
+			const user = await this.userRepository.reactivateOrCreate(profile);
 			return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio }, profileId: user.id };
 		} catch (error) {
 			if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
