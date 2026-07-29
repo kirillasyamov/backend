@@ -38,8 +38,8 @@ export class UserController {
 		throw new RpcException({ code: status.UNIMPLEMENTED, message: 'Method GetUsers not implemented' });
 	}
 
-	public async updateUser(_data: UpdateUserRequest): Promise<UpdateUserResponse> {
-		throw new RpcException({ code: status.UNIMPLEMENTED, message: 'Method UpdateUser not implemented' });
+	public async updateUser(data: UpdateUserRequest): Promise<UpdateUserResponse> {
+		return this.userService.updateUser(data);
 	}
 
 	public async deleteUser(data: DeleteUserRequest): Promise<void> {
