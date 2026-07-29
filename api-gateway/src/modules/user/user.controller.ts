@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -43,6 +43,16 @@ export class UserController {
 	@HttpCode(HttpStatus.OK)
 	public async getMe(@CurrentUser('sub') accountId: string) {
 		return await this.userService.getMe(accountId);
+	}
+
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Read all user profiles' })
+	@ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+	@ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+	@Get('all')
+	@HttpCode(HttpStatus.OK)
+	public async getUsers(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
+		return await this.userService.getUsers(Number(page), Number(limit));
 	}
 
 	@ApiBearerAuth()
