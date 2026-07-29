@@ -3,7 +3,7 @@ import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { UserRepository } from './user.repository';
-import { CreateUserRequest, CreateUserResponse, UpdateUserRequest, UpdateUserResponse, DeleteUserRequest } from 'common/contracts/generated/user';
+import { CreateUserRequest, CreateUserResponse, GetUserRequest, GetUserResponse, UpdateUserRequest, UpdateUserResponse, DeleteUserRequest } from 'common/contracts/generated/user';
 
 @Injectable()
 export class UserService {
@@ -25,6 +25,16 @@ export class UserService {
 			}
 			throw error;
 		}
+	}
+
+	public async getUser(request: GetUserRequest): Promise<GetUserResponse> {
+		const login = request.login;
+		if (!login) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'Login is required' });
+
+		const user = await this.userRepository.findByLogin(login);
+		if (!user) throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
+
+		return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio } };
 	}
 
 	public async updateUser(request: UpdateUserRequest): Promise<UpdateUserResponse> {
