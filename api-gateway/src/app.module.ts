@@ -7,11 +7,12 @@ import { ConfigModule } from 'common/modules/config';
 import { apiGatewaySchema } from 'common/dist/configs/gateway.env.scheme.js';
 import { authSchema } from 'common/configs/auth.scheme';
 import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
 import { GrpcToHttpExceptionFilter } from 'common/filters/grpc-to-http-exception.filter';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
 @Module({
-	imports: [ConfigModule.forRoot(apiGatewaySchema, authSchema), ThrottlerModule.forRoot([{ ttl: 60000, limit: 5 }]), AuthModule],
+	imports: [ConfigModule.forRoot(apiGatewaySchema, authSchema), ThrottlerModule.forRoot([{ ttl: 60000, limit: 5 }]), AuthModule, UserModule],
 	controllers: [GatewayController],
 	providers: [
 		GatewayService,
