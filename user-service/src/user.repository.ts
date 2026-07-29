@@ -12,7 +12,7 @@ export class UserRepository {
 	}
 
 	public async findByLogin(login: string): Promise<User | null> {
-		return this.prisma.user.findUnique({ where: { login } });
+		return this.prisma.user.findFirst({ where: { login, deletedAt: null } });
 	}
 
 	public async update(login: string, data: { age?: number; bio?: string }): Promise<User> {
