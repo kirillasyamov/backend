@@ -18,6 +18,8 @@ import type {
 	GetAccountByLoginResponse,
 	GetAccountByEmailRequest,
 	GetAccountByEmailResponse,
+	GetAccountByIdRequest,
+	GetAccountByIdResponse,
 } from 'common/contracts/generated/auth';
 import { AuthServiceControllerMethods } from 'common/contracts/generated/auth';
 import { AuthService } from './auth-service.service';
@@ -70,6 +72,12 @@ export class AuthServiceController implements AuthServiceControllerInterface {
 		request: GetAccountByEmailRequest,
 	): Promise<GetAccountByEmailResponse> {
 		return this.authService.getAccountByEmail(request);
+	}
+
+	public async getAccountById(
+		request: GetAccountByIdRequest,
+	): Promise<GetAccountByIdResponse> {
+		return this.authService.getAccountById(request);
 	}
 
 	public async getSessions(request: GetSessionsRequest): Promise<GetSessionsResponse> {

@@ -25,6 +25,8 @@ import type {
 	GetAccountByLoginResponse,
 	GetAccountByEmailRequest,
 	GetAccountByEmailResponse,
+	GetAccountByIdRequest,
+	GetAccountByIdResponse,
 } from 'common/contracts/generated/auth';
 import type { TokenServiceClient } from 'common/contracts/generated/token';
 import { hash, verify } from '@node-rs/argon2';
@@ -196,6 +198,26 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 		request: GetAccountByEmailRequest,
 	): Promise<GetAccountByEmailResponse> {
 		const account = await this.accountRepository.findByEmail(request.email);
+
+		if (!account) {
+			throw new RpcException({
+				code: status.NOT_FOUND,
+				message: 'Account not found',
+			});
+		}
+
+		return {
+			accountId: account.id,
+			login: account.login,
+			email: account.email,
+			roleId: account.roleId,
+		};
+	}
+
+	public async getAccountById(
+		request: GetAccountByIdRequest,
+	): Promise<GetAccountByIdResponse> {
+		const account = await this.accountRepository.findById(request.id);
 
 		if (!account) {
 			throw new RpcException({
