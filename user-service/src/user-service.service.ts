@@ -43,8 +43,20 @@ export class UserService {
 
 	public async deleteUser(request: DeleteUserRequest): Promise<void> {
 		try {
-			await this.userRepository.softDelete(request.id);
+			let id = request.id;
+			if (!id && request.login) {
+				const user = await this.userRepository.findByLogin(request.login);
+				if (!user) {
+					throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
+				}
+				id = user.id;
+			}
+			if (!id) {
+				throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'Either id or login must be provided' });
+			}
+			await this.userRepository.softDelete(id);
 		} catch (error) {
+			if (error instanceof RpcException) throw error;
 			if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
 				throw new RpcException({
 					code: status.NOT_FOUND,
