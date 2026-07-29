@@ -31,6 +31,10 @@ export class UserService implements OnModuleInit {
 		return firstValueFrom(this.userGrpcService.updateUser({ login, ...data }));
 	}
 
+	public async getUser(login: string): Promise<GetUserResponse> {
+		return firstValueFrom(this.userGrpcService.getUser({ login }));
+	}
+
 	public async getMe(accountId: string): Promise<GetUserResponse> {
 		const { login } = await firstValueFrom(this.authGrpcService.getAccountById({ id: accountId }));
 		return firstValueFrom(this.userGrpcService.getUser({ login }));
