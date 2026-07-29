@@ -9,4 +9,13 @@ import { UserService } from './user.service';
 @Controller('user')
 export class UserController {
 	constructor(private readonly userService: UserService) {}
+
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Update user profile' })
+	@ApiBody({ type: UpdateUserDto })
+	@Patch()
+	@HttpCode(HttpStatus.OK)
+	public async updateUser(@CurrentUser('sub') accountId: string, @Body() dto: UpdateUserDto) {
+		return await this.userService.updateUser(accountId, dto);
+	}
 }
