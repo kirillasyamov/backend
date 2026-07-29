@@ -4,8 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import type { AuthServiceClient } from 'common/contracts/generated/auth';
 import type { UserServiceClient } from 'common/contracts/generated/user';
-import type { UpdateUserResponse } from 'common/contracts/generated/user';
-import { Empty } from 'common/contracts/generated/google/protobuf/empty';
+import type { CreateUserResponse, UpdateUserResponse } from 'common/contracts/generated/user';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -20,6 +19,11 @@ export class UserService implements OnModuleInit {
 	onModuleInit() {
 		this.authGrpcService = this.authClient.getService<AuthServiceClient>('AuthService');
 		this.userGrpcService = this.userClient.getService<UserServiceClient>('UserService');
+	}
+
+	public async createUser(accountId: string, data: { age: number; bio: string }): Promise<CreateUserResponse> {
+		const { login, email } = await firstValueFrom(this.authGrpcService.getAccountById({ id: accountId }));
+		return firstValueFrom(this.userGrpcService.createUser({ userProfile: { login, email, ...data } }));
 	}
 
 	public async updateUser(accountId: string, data: { age?: number; bio?: string }): Promise<UpdateUserResponse> {

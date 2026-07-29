@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, HttpCode, HttpStatus, Patch } from '@nestjs/common';
+import { Body, Controller, Delete, HttpCode, HttpStatus, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
 
@@ -9,6 +10,15 @@ import { UserService } from './user.service';
 @Controller('user')
 export class UserController {
 	constructor(private readonly userService: UserService) {}
+
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Create user profile' })
+	@ApiBody({ type: CreateUserDto })
+	@Post()
+	@HttpCode(HttpStatus.CREATED)
+	public async createUser(@CurrentUser('sub') accountId: string, @Body() dto: CreateUserDto) {
+		return await this.userService.createUser(accountId, dto);
+	}
 
 	@ApiBearerAuth()
 	@ApiOperation({ summary: 'Update user profile' })
