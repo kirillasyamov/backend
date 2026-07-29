@@ -27,6 +27,18 @@ export class UserRepository {
 		return this.prisma.user.create({ data });
 	}
 
+	public async findAll(page: number, limit: number): Promise<{ users: User[]; total: number }> {
+		const [users, total] = await this.prisma.$transaction([
+			this.prisma.user.findMany({
+				where: { deletedAt: null },
+				skip: (page - 1) * limit,
+				take: limit,
+			}),
+			this.prisma.user.count({ where: { deletedAt: null } }),
+		]);
+		return { users, total };
+	}
+
 	public async findByLogin(login: string): Promise<User | null> {
 		return this.prisma.user.findFirst({ where: { login, deletedAt: null } });
 	}

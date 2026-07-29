@@ -3,7 +3,7 @@ import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { UserRepository } from './user.repository';
-import { CreateUserRequest, CreateUserResponse, GetUserRequest, GetUserResponse, UpdateUserRequest, UpdateUserResponse, DeleteUserRequest } from 'common/contracts/generated/user';
+import { CreateUserRequest, CreateUserResponse, GetUserRequest, GetUserResponse, GetUsersRequest, GetUsersResponse, UpdateUserRequest, UpdateUserResponse, DeleteUserRequest } from 'common/contracts/generated/user';
 
 @Injectable()
 export class UserService {
@@ -35,6 +35,18 @@ export class UserService {
 		if (!user) throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
 
 		return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio } };
+	}
+
+	public async getUsers(request: GetUsersRequest): Promise<GetUsersResponse> {
+		const page = request.page || 1;
+		const limit = request.limit || 10;
+		const { users, total } = await this.userRepository.findAll(page, limit);
+		return {
+			users: users.map((u) => ({ login: u.login, email: u.email, age: u.age, bio: u.bio })),
+			total,
+			page,
+			limit,
+		};
 	}
 
 	public async updateUser(request: UpdateUserRequest): Promise<UpdateUserResponse> {

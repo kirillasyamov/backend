@@ -34,8 +34,8 @@ export class UserController {
 		return this.userService.getUser(data);
 	}
 
-	public async getUsers(_data: GetUsersRequest): Promise<GetUsersResponse> {
-		throw new RpcException({ code: status.UNIMPLEMENTED, message: 'Method GetUsers not implemented' });
+	public async getUsers(data: GetUsersRequest): Promise<GetUsersResponse> {
+		return this.userService.getUsers(data);
 	}
 
 	public async updateUser(data: UpdateUserRequest): Promise<UpdateUserResponse> {
