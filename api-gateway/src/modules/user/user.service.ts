@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import type { AuthServiceClient } from 'common/contracts/generated/auth';
 import type { UserServiceClient } from 'common/contracts/generated/user';
-import type { CreateUserResponse, UpdateUserResponse } from 'common/contracts/generated/user';
+import type { CreateUserResponse, GetUserResponse, UpdateUserResponse } from 'common/contracts/generated/user';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -29,6 +29,11 @@ export class UserService implements OnModuleInit {
 	public async updateUser(accountId: string, data: { age?: number; bio?: string }): Promise<UpdateUserResponse> {
 		const { login } = await firstValueFrom(this.authGrpcService.getAccountById({ id: accountId }));
 		return firstValueFrom(this.userGrpcService.updateUser({ login, ...data }));
+	}
+
+	public async getMe(accountId: string): Promise<GetUserResponse> {
+		const { login } = await firstValueFrom(this.authGrpcService.getAccountById({ id: accountId }));
+		return firstValueFrom(this.userGrpcService.getUser({ login }));
 	}
 
 	public async deleteUser(accountId: string): Promise<void> {

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, HttpCode, HttpStatus, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -35,5 +35,13 @@ export class UserController {
 	@HttpCode(HttpStatus.NO_CONTENT)
 	public async deleteUser(@CurrentUser('sub') accountId: string): Promise<void> {
 		await this.userService.deleteUser(accountId);
+	}
+
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Read current user profile' })
+	@Get('me')
+	@HttpCode(HttpStatus.OK)
+	public async getMe(@CurrentUser('sub') accountId: string) {
+		return await this.userService.getMe(accountId);
 	}
 }
