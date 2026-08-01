@@ -15,7 +15,7 @@ import { prismaConfig } from 'common/configs/prisma.config';
 		ConfigModule.forRoot(prismaSchema, grpcSchema),
 		PrismaModule.forRootAsync({
 			isGlobal: true,
-			clientClass: PrismaClient as any,
+			clientClass: PrismaClient,
 			adapter: new PrismaPg({ connectionString: prismaConfig.connectionString }),
 		}),
 	],

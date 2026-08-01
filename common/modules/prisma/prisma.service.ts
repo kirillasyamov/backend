@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { OnModuleInit, OnModuleDestroy, OnApplicationShutdown } from '@nestjs/common';
+import type { OnModuleInit, OnApplicationShutdown } from '@nestjs/common';
 import type { PrismaClientLike } from './prisma.interfaces';
 
 import { PRISMA_CLIENT_CLASS, PRISMA_ADAPTER } from './prisma.tokens';
@@ -28,7 +28,7 @@ export class PrismaService implements OnModuleInit, OnApplicationShutdown {
 		try {
 			await this.client.$connect();
 			const ms = Date.now() - start;
-			this.logger.log(`Database connection established (time ${ms}ms).`);
+			this.logger.log(`Database connection established (time ${String(ms)}ms).`);
 		} catch (error) {
 			this.logger.error('Database connection failed: ', { error });
 			throw error;
@@ -37,7 +37,10 @@ export class PrismaService implements OnModuleInit, OnApplicationShutdown {
 
 	async onApplicationShutdown(signal?: string): Promise<void> {
 		this.logger.log(`Received shutdown signal: ${signal ?? 'unknown'}`);
-		if (!this.isConnected) return this.logger.log(`Database connection closed.`);
+		if (!this.isConnected) {
+			this.logger.log(`Database connection closed.`);
+			return;
+		}
 		this.logger.log('Disconnecting from database');
 		try {
 			await this.client.$disconnect();

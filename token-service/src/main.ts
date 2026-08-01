@@ -14,7 +14,7 @@ async function bootstrap() {
 		options: {
 			package: ['token.v1', 'grpc.health.v1'],
 			protoPath: [join(import.meta.dirname, '../../common/contracts/proto/token.proto'), healthProtoPath],
-			url: `localhost:${grpcServiceConfig.port}`,
+			url: `localhost:${String(grpcServiceConfig.port)}`,
 			loader: {
 				keepCase: false,
 				longs: String,
@@ -29,4 +29,4 @@ async function bootstrap() {
 
 	await app.listen();
 }
-bootstrap();
+void bootstrap();

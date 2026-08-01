@@ -18,7 +18,7 @@ export class GatewayController {
 	@Get('health')
 	@Public()
 	@ApiOperation({ summary: 'Health check' })
-	check() {
+	async check() {
 		return this.gatewayService.healthCheck();
 	}
 }

@@ -1,7 +1,7 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import { SwaggerModule } from '@nestjs/swagger';
+import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { GatewayModule } from './app.module';
 
 import { apiGatewayConfig } from 'common/configs/gateway.env.config';
@@ -28,7 +28,7 @@ async function bootstrap() {
 
 	await app.listen(port, host);
 
-	logger.log(`Gateway is running on http://${host}:${port}`);
-	logger.log(`Swagger docs are available at http://${host}:${port}/docs`);
+	logger.log(`Gateway is running on http://${host}:${String(port)}`);
+	logger.log(`Swagger docs are available at http://${host}:${String(port)}/docs`);
 }
-bootstrap();
+void bootstrap();

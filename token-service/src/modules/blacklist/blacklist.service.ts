@@ -19,6 +19,6 @@ export class BlacklistService {
 	public async addToBlacklist(token: string, ttlSeconds: number): Promise<void> {
 		const key = `${BLACKLIST_PREFIX}${token}`;
 		await this.redis.set(key, '1', 'EX', ttlSeconds);
-		this.logger.debug(`Token blacklisted with ttl=${ttlSeconds}s`);
+		this.logger.debug(`Token blacklisted with ttl=${String(ttlSeconds)}s`);
 	}
 }

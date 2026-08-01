@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { type MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'node:path';
 import { UserServiceModule } from './user-service.module';
 import { GrpcExceptionFilter } from 'common/filters/grpc-exception.filter';
@@ -15,7 +15,7 @@ async function bootstrap() {
 		options: {
 			package: ['user.v1', 'grpc.health.v1'],
 			protoPath: [join(import.meta.dirname, '../../common/contracts/proto/user.proto'), healthProtoPath],
-			url: `0.0.0.0:${grpcServiceConfig.port}`,
+			url: `0.0.0.0:${String(grpcServiceConfig.port)}`,
 		},
 	});
 
@@ -23,4 +23,4 @@ async function bootstrap() {
 
 	await app.listen();
 }
-bootstrap();
+void bootstrap();

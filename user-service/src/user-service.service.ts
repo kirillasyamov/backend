@@ -3,7 +3,17 @@ import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { UserRepository } from './user.repository';
-import { CreateUserRequest, CreateUserResponse, GetUserRequest, GetUserResponse, GetUsersRequest, GetUsersResponse, UpdateUserRequest, UpdateUserResponse, DeleteUserRequest } from 'common/contracts/generated/user';
+import {
+	CreateUserRequest,
+	CreateUserResponse,
+	GetUserRequest,
+	GetUserResponse,
+	GetUsersRequest,
+	GetUsersResponse,
+	UpdateUserRequest,
+	UpdateUserResponse,
+	DeleteUserRequest,
+} from 'common/contracts/generated/user';
 
 @Injectable()
 export class UserService {
@@ -11,12 +21,15 @@ export class UserService {
 
 	public async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
 		try {
-			const profile = request.userProfile!;
+			const profile = request.userProfile;
+			if (!profile) {
+				throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'User profile is required' });
+			}
 			const user = await this.userRepository.reactivateOrCreate(profile);
 			return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio }, profileId: user.id };
 		} catch (error) {
 			if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-				const target = (error.meta?.target as string[]) ?? [];
+				const target = (error.meta?.target as string[] | undefined) ?? [];
 				const field = target.includes('email') ? 'email' : target.includes('login') ? 'login' : 'value';
 				throw new RpcException({
 					code: status.ALREADY_EXISTS,
@@ -42,7 +55,7 @@ export class UserService {
 		const limit = request.limit || 10;
 		const { users, total } = await this.userRepository.findAll(page, limit);
 		return {
-			users: users.map((u) => ({ login: u.login, email: u.email, age: u.age, bio: u.bio })),
+			users: users.map(u => ({ login: u.login, email: u.email, age: u.age, bio: u.bio })),
 			total,
 			page,
 			limit,

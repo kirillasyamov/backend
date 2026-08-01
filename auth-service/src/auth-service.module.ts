@@ -22,7 +22,7 @@ const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/pro
 		ConfigModule.forRoot(prismaSchema, grpcSchema),
 		PrismaModule.forRootAsync({
 			isGlobal: true,
-			clientClass: PrismaClient as any,
+			clientClass: PrismaClient,
 			adapter: new PrismaPg({ connectionString: prismaConfig.connectionString }),
 		}),
 		ClientsModule.registerAsync([
@@ -32,10 +32,7 @@ const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/pro
 					transport: Transport.GRPC,
 					options: {
 						package: ['token.v1', 'grpc.health.v1'],
-						protoPath: [
-							'../common/contracts/proto/token.proto',
-							healthProtoPath,
-						],
+						protoPath: ['../common/contracts/proto/token.proto', healthProtoPath],
 						url: grpcServiceConfig.tokenServiceUrl,
 					},
 				}),

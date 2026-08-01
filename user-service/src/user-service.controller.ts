@@ -1,7 +1,5 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { RpcException } from '@nestjs/microservices';
-import { status } from '@grpc/grpc-js';
 import { UserService } from './user-service.service';
 import type {
 	CreateUserRequest,
@@ -22,7 +20,7 @@ export class UserController {
 	constructor(private readonly userService: UserService) {}
 
 	@GrpcMethod('Health', 'Check')
-	public async check(): Promise<{ status: number }> {
+	public check(): { status: number } {
 		return { status: 1 };
 	}
 

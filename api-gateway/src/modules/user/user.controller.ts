@@ -51,8 +51,8 @@ export class UserController {
 	@ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
 	@Get('all')
 	@HttpCode(HttpStatus.OK)
-	public async getUsers(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
-		return await this.userService.getUsers(Number(page), Number(limit));
+	public async getUsers(@Query('page') page = 1, @Query('limit') limit = 10) {
+		return await this.userService.getUsers(page, limit);
 	}
 
 	@ApiBearerAuth()

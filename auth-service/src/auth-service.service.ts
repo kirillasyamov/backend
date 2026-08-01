@@ -59,12 +59,12 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 			return {
 				accountId: account.id,
 				login: request.login,
-				email: account.email ?? '',
+				email: account.email,
 				roleId: 1,
 			};
 		} catch (error) {
 			if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-				const target = (error.meta?.target as string[]) ?? [];
+				const target = (error.meta?.target as string[] | undefined) ?? [];
 				const field = target.includes('email') ? 'email' : target.includes('login') ? 'login' : 'value';
 				throw new RpcException({
 					code: status.ALREADY_EXISTS,
@@ -174,9 +174,7 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 		return { tokens: { accessToken: jsonWebToken, refreshToken: newSession.refreshToken } };
 	}
 
-	public async getAccountByLogin(
-		request: GetAccountByLoginRequest,
-	): Promise<GetAccountByLoginResponse> {
+	public async getAccountByLogin(request: GetAccountByLoginRequest): Promise<GetAccountByLoginResponse> {
 		const account = await this.accountRepository.findByLogin(request.login);
 
 		if (!account) {
@@ -194,9 +192,7 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 		};
 	}
 
-	public async getAccountByEmail(
-		request: GetAccountByEmailRequest,
-	): Promise<GetAccountByEmailResponse> {
+	public async getAccountByEmail(request: GetAccountByEmailRequest): Promise<GetAccountByEmailResponse> {
 		const account = await this.accountRepository.findByEmail(request.email);
 
 		if (!account) {
@@ -214,9 +210,7 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 		};
 	}
 
-	public async getAccountById(
-		request: GetAccountByIdRequest,
-	): Promise<GetAccountByIdResponse> {
+	public async getAccountById(request: GetAccountByIdRequest): Promise<GetAccountByIdResponse> {
 		const account = await this.accountRepository.findById(request.id);
 
 		if (!account) {

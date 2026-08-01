@@ -25,7 +25,7 @@ export class TokenService {
 				.setIssuer(jwtConfig.issuer)
 				.setJti(randomUUID())
 				.setIssuedAt()
-				.setExpirationTime(`${request.ttlSeconds}s`)
+				.setExpirationTime(`${String(request.ttlSeconds)}s`)
 				.sign(privateKey);
 
 			this.logger.debug(`Generated JWT for sub=${request.sub}, aud=${request.aud}`);
@@ -64,7 +64,7 @@ export class TokenService {
 			if (ttl <= 0) return;
 
 			await this.blacklist.addToBlacklist(request.jsonWebToken, ttl);
-			this.logger.debug(`Invalidated JWT with jti=${payload.jti}, ttl=${ttl}s`);
+			this.logger.debug(`Invalidated JWT with jti=${payload.jti ?? 'unknown'}, ttl=${String(ttl)}s`);
 		} catch (error) {
 			if (error instanceof RpcException) throw error;
 			throw new RpcException({
