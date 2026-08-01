@@ -34,10 +34,16 @@ export default [
 			'@typescript-eslint/no-unsafe-return': 'error',
 			'@typescript-eslint/promise-function-async': 'error',
 			'@typescript-eslint/no-non-null-assertion': 'warn',
+			'@typescript-eslint/no-extraneous-class': ['error', { allowStaticOnly: true, allowWithDecorator: true }],
+			'@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
 			'@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', fixStyle: 'inline-type-imports' }],
 			'prettier/prettier': ['error', { endOfLine: 'auto' }],
 			'no-console': 'warn',
 		},
+	},
+	{
+		files: ['**/prisma.config.ts'],
+		...tseslint.configs.disableTypeChecked,
 	},
 	{
 		files: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
