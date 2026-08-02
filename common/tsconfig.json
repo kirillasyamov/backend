@@ -9,5 +9,5 @@
 		},
 		"tsBuildInfoFile": "./dist/.tsbuildinfo"
 	},
-	"include": ["modules/**/*", "utils/**/*", "contracts/**/*", "configs/**/*", "filters/**/*", "enums/**/*"]
+	"include": ["index.ts", "modules/**/*", "utils/**/*", "contracts/**/*", "configs/**/*", "filters/**/*", "enums/**/*"]
 }
