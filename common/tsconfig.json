@@ -4,6 +4,7 @@
 		"outDir": "./dist",
 		"rootDir": ".",
 		"composite": true,
+		"emitDeclarationOnly": true,
 		"paths": {
 			"@/*": ["./modules/*", "./utils/*", "./contracts/*", "./enums/*", "./filters/*"]
 		},

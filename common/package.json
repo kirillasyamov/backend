@@ -1,6 +1,6 @@
 {
 	"name": "@kirillasyamov/common",
-	"version": "1.0.0",
+	"version": "3.0.4",
 	"description": "Shared contracts, configs, modules and filters for the application",
 	"type": "module",
 	"main": "./dist/index.js",
@@ -16,17 +16,17 @@
 			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
 		},
-		"./configs/*": {
-			"types": "./dist/configs/*.d.ts",
-			"default": "./dist/configs/*.js"
+		"./configs": {
+			"types": "./dist/configs/index.d.ts",
+			"default": "./dist/configs/index.js"
+		},
+		"./filters": {
+			"types": "./dist/filters/index.d.ts",
+			"default": "./dist/filters/index.js"
 		},
 		"./modules/*": {
 			"types": "./dist/modules/*.d.ts",
 			"default": "./dist/modules/*.js"
-		},
-		"./filters/*": {
-			"types": "./dist/filters/*.d.ts",
-			"default": "./dist/filters/*.js"
 		},
 		"./enums/*": {
 			"types": "./dist/enums/*.d.ts",
@@ -40,7 +40,7 @@
 		"./package.json": "./package.json"
 	},
 	"scripts": {
-		"build": "tsc -p tsconfig.json"
+		"build": "tsup && tsc -p tsconfig.build.json"
 	},
 	"publishConfig": {
 		"access": "public",
@@ -56,8 +56,9 @@
 	"author": "kirillasyamov",
 	"license": "ISC",
 	"dependencies": {
-		"joi": "^17.13.3",
-		"ioredis": "^5.6.1"
+		"grpc-health-check": "^2.1.0",
+		"ioredis": "^5.6.1",
+		"joi": "^17.13.3"
 	},
 	"peerDependencies": {
 		"@grpc/grpc-js": "^1.14.4",
@@ -81,6 +82,7 @@
 		"@types/node": "^26.0.1",
 		"reflect-metadata": "^0.2.2",
 		"rxjs": "^7.8.2",
+		"tsup": "^8.5.0",
 		"typescript": "^6.0.3"
 	}
 }
