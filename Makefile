@@ -1,3 +1,12 @@
+
+NPM_PUBLISH_TOKEN := $(shell node --env-file=.env -e "console.log(process.env.NPM_PUBLISH_TOKEN)")
+COMMON_PACKAGE_VERSION := $(shell node -p "require('./common/package.json').version")
+
+update-common-package-version:
+	node -p "require('./common/package.json').version"
+	yq -i '.catalogs.common."@kirillasyamov/common" = "^$(COMMON_PACKAGE_VERSION)"' pnpm-workspace.yaml
+	pnpm install
+
 dev:
 	pnpm dev
 
@@ -34,3 +43,25 @@ lint:
 
 format:
 	pnpm format
+
+publish-common:
+#  	mkdir -p ./common/contracts/generated
+	pnpm gen
+	pnpm --filter @kirillasyamov/common build
+	cd common && pnpm publish --no-git-checks --//registry.npmjs.org/:_authToken="$(NPM_PUBLISH_TOKEN)"
+	$(MAKE) update-common-package-version
+
+publish-common-major:
+	cd common && pnpm version major --no-git-tag-version --no-git-checks
+	$(MAKE) publish-common
+	$(MAKE) update-common-package-version
+
+publish-common-minor:
+	cd common && pnpm version minor --no-git-tag-version --no-git-checks
+	$(MAKE) publish-common
+	$(MAKE) update-common-package-version
+
+publish-common-patch:
+	cd common && pnpm version patch --no-git-tag-version --no-git-checks
+	$(MAKE) publish-common
+	$(MAKE) update-common-package-version

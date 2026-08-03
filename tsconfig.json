@@ -2,9 +2,6 @@
 	"files": [],
 	"references": [
 		{
-			"path": "common/tsconfig.json"
-		},
-		{
 			"path": "auth-service/tsconfig.json"
 		},
 		{

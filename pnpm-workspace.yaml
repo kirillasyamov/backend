@@ -5,13 +5,15 @@ allowBuilds:
     '@scarf/scarf': false
     prisma: true
     protobufjs: true
+    esbuild: true
     shellEmulator: true
-    engineStrict: true
-    catalogMode: prefer
+engineStrict: true
+catalogMode: prefer
+minimumReleaseAgeExclude:
+    - '@kirillasyamov/common'
 
 packages:
     - 'common'
-    - 'database'
     - 'api-gateway'
     - 'auth-service'
     - 'user-service'
@@ -65,3 +67,5 @@ catalogs:
     auth:
         '@node-rs/argon2': '^2.0.2'
         jose: ^6.0.12
+    common:
+        '@kirillasyamov/common': ^3.0.4
