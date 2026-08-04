@@ -7,8 +7,8 @@ import type {
 	ValidateJWTRequest,
 	ValidateJWTResponse,
 	InvalidateJWTRequest,
-} from 'common/contracts/generated/token';
-import { TokenServiceControllerMethods } from 'common/contracts/generated/token';
+} from '@kirillasyamov/common/contracts/generated/token';
+import { TokenServiceControllerMethods } from '@kirillasyamov/common/contracts/generated/token';
 import { TokenService } from './token-service.service';
 
 @Controller()

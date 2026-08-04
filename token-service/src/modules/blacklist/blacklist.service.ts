@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { REDIS_CLIENT } from 'common/modules/redis';
+import { REDIS_CLIENT } from '@kirillasyamov/common';
 import type Redis from 'ioredis';
 
 const BLACKLIST_PREFIX = 'jwt:blacklist:';

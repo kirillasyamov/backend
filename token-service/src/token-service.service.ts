@@ -3,8 +3,8 @@ import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { SignJWT, jwtVerify, importPKCS8, importSPKI, type JWTPayload } from 'jose';
 import { randomUUID } from 'node:crypto';
-import type { GenerateJWTRequest, GenerateJWTResponse, ValidateJWTRequest, ValidateJWTResponse, InvalidateJWTRequest } from 'common/contracts/generated/token';
-import { jwtConfig } from 'common/configs/jwt.config';
+import type { GenerateJWTRequest, GenerateJWTResponse, ValidateJWTRequest, ValidateJWTResponse, InvalidateJWTRequest } from '@kirillasyamov/common/contracts/generated/token';
+import { jwtConfig } from '@kirillasyamov/common/configs';
 import { BlacklistService } from './modules/blacklist/blacklist.service';
 
 @Injectable()
