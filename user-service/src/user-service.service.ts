@@ -13,7 +13,7 @@ import {
 	UpdateUserRequest,
 	UpdateUserResponse,
 	DeleteUserRequest,
-} from 'common/contracts/generated/user';
+} from '@kirillasyamov/common/contracts/generated/user';
 
 @Injectable()
 export class UserService {

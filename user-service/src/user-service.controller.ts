@@ -11,8 +11,8 @@ import type {
 	UpdateUserRequest,
 	UpdateUserResponse,
 	DeleteUserRequest,
-} from 'common/contracts/generated/user';
-import { UserServiceControllerMethods } from 'common/contracts/generated/user';
+} from '@kirillasyamov/common/contracts/generated/user';
+import { UserServiceControllerMethods } from '@kirillasyamov/common/contracts/generated/user';
 
 @Controller()
 @UserServiceControllerMethods()
