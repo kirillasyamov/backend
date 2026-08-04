@@ -5,17 +5,11 @@ import { AuthService } from './auth-service.service';
 import { AccountRepository } from './account.repository';
 import { SessionRepository } from './session.repository';
 import { RoleRepository } from './role.repository';
-import { PrismaModule } from 'common/modules/prisma';
+import { tokenProtoPath, healthProtoPath } from '@kirillasyamov/common';
+import { PrismaModule, ConfigModule } from '@kirillasyamov/common';
+import { prismaConfig, prismaSchema, grpcSchema, grpcServiceConfig } from '@kirillasyamov/common/configs';
 import { PrismaClient } from '../prisma/generated/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { prismaConfig } from 'common/configs/prisma.config';
-import { ConfigModule } from 'common/modules/config';
-import { prismaSchema } from 'common/configs/prisma.scheme';
-import { grpcSchema } from 'common/configs/grpc.scheme';
-import { grpcServiceConfig } from 'common/configs/grpc.config';
-import { fileURLToPath } from 'node:url';
-
-const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/proto/health/v1/health.proto'));
 
 @Module({
 	imports: [
@@ -32,7 +26,7 @@ const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/pro
 					transport: Transport.GRPC,
 					options: {
 						package: ['token.v1', 'grpc.health.v1'],
-						protoPath: ['../common/contracts/proto/token.proto', healthProtoPath],
+						protoPath: [tokenProtoPath, healthProtoPath],
 						url: grpcServiceConfig.tokenServiceUrl,
 					},
 				}),

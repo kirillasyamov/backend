@@ -27,11 +27,11 @@ import type {
 	GetAccountByEmailResponse,
 	GetAccountByIdRequest,
 	GetAccountByIdResponse,
-} from 'common/contracts/generated/auth';
-import type { TokenServiceClient } from 'common/contracts/generated/token';
+} from '@kirillasyamov/common/contracts/generated/auth';
+import type { TokenServiceClient } from '@kirillasyamov/common/contracts/generated/token';
 import { hash, verify } from '@node-rs/argon2';
 import { randomBytes } from 'crypto';
-import { authConfig } from 'common/configs/auth.config';
+import { authConfig } from '@kirillasyamov/common/configs';
 
 @Injectable()
 export class AuthService implements AuthServiceController, OnModuleInit {

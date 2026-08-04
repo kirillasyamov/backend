@@ -20,8 +20,8 @@ import type {
 	GetAccountByEmailResponse,
 	GetAccountByIdRequest,
 	GetAccountByIdResponse,
-} from 'common/contracts/generated/auth';
-import { AuthServiceControllerMethods } from 'common/contracts/generated/auth';
+} from '@kirillasyamov/common/contracts/generated/auth';
+import { AuthServiceControllerMethods } from '@kirillasyamov/common/contracts/generated/auth';
 import { AuthService } from './auth-service.service';
 
 @Controller()
