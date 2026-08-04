@@ -2,9 +2,8 @@ import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
-import type { AuthServiceClient } from 'common/contracts/generated/auth';
-import type { UserServiceClient } from 'common/contracts/generated/user';
-import type { CreateUserResponse, GetUserResponse, GetUsersResponse, UpdateUserResponse } from 'common/contracts/generated/user';
+import type { AuthServiceClient } from '@kirillasyamov/common/contracts/generated/auth';
+import type { UserServiceClient, CreateUserResponse, GetUserResponse, GetUsersResponse, UpdateUserResponse } from '@kirillasyamov/common/contracts/generated/user';
 
 @Injectable()
 export class UserService implements OnModuleInit {

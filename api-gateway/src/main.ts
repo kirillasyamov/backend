@@ -4,8 +4,7 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { GatewayModule } from './app.module';
 
-import { apiGatewayConfig } from 'common/configs/gateway.env.config';
-import { buildSwaggerConfig } from 'common/configs/swagger.config';
+import { apiGatewayConfig, buildSwaggerConfig } from '@kirillasyamov/common/configs';
 
 const apiVersion = '1.0';
 

@@ -1,10 +1,10 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { TokenPair } from 'common/contracts/generated/auth';
-import { AuthServiceClient } from 'common/contracts/generated/auth';
-import { UserServiceClient } from 'common/contracts/generated/user';
-import { Empty } from 'common/contracts/generated/google/protobuf/empty';
+import { TokenPair } from '@kirillasyamov/common/contracts/generated/auth';
+import { AuthServiceClient } from '@kirillasyamov/common/contracts/generated/auth';
+import { UserServiceClient } from '@kirillasyamov/common/contracts/generated/user';
+import { Empty } from '@kirillasyamov/common/contracts/generated/google/protobuf/empty';
 
 import type {
 	CreateAccountRequest,
@@ -14,9 +14,9 @@ import type {
 	CreateSessionResponse,
 	RevokeSessionRequest,
 	RefreshSessionRequest,
-} from 'common/contracts/generated/auth';
+} from '@kirillasyamov/common/contracts/generated/auth';
 
-import type { CreateUserRequest, CreateUserResponse, DeleteUserRequest } from 'common/contracts/generated/user';
+import type { CreateUserRequest, CreateUserResponse, DeleteUserRequest } from '@kirillasyamov/common/contracts/generated/user';
 
 interface SignUpRequest {
 	login: string;
