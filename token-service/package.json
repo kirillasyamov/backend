@@ -49,6 +49,7 @@
 		"reflect-metadata": "catalog:runtime",
 		"rxjs": "catalog:runtime",
 		"grpc-health-check": "catalog:grpc",
+		"dotenv": "catalog:config",
 		"jose": "catalog:auth",
 		"ioredis": "catalog:database",
 		"@kirillasyamov/common": "catalog:common"

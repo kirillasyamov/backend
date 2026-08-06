@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { Transport, type MicroserviceOptions } from '@nestjs/microservices';
 import { TokenServiceModule } from './token-service.module';
@@ -11,7 +12,7 @@ async function bootstrap() {
 		options: {
 			package: ['token.v1', 'grpc.health.v1'],
 			protoPath: [tokenProtoPath, healthProtoPath],
-			url: `localhost:${String(grpcServiceConfig.port)}`,
+			url: `${grpcServiceConfig.host}:${String(grpcServiceConfig.port)}`,
 			loader: {
 				keepCase: false,
 				longs: String,
@@ -23,6 +24,7 @@ async function bootstrap() {
 	});
 
 	void app.useGlobalFilters(new GrpcExceptionFilter());
+	app.enableShutdownHooks();
 
 	await app.listen();
 }
