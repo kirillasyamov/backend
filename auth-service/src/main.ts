@@ -12,11 +12,12 @@ async function bootstrap() {
 		options: {
 			package: ['auth.v1', 'grpc.health.v1'],
 			protoPath: [authProtoPath, healthProtoPath],
-			url: `0.0.0.0:${String(grpcServiceConfig.port)}`,
+			url: `${grpcServiceConfig.host}:${String(grpcServiceConfig.port)}`,
 		},
 	});
 
 	app.useGlobalFilters(new GrpcExceptionFilter());
+	app.enableShutdownHooks();
 
 	await app.listen();
 }
