@@ -1,3 +1,13 @@
+supportedArchitectures:
+    os:
+        - current
+        - linux
+    cpu:
+        - current
+        - x64
+    libc:
+        - current
+        - glibc
 allowBuilds:
     '@swc/core': true
     '@prisma/client': true
@@ -9,6 +19,7 @@ allowBuilds:
     shellEmulator: true
 engineStrict: true
 catalogMode: prefer
+
 minimumReleaseAgeExclude:
     - '@kirillasyamov/common'
 
@@ -18,7 +29,6 @@ packages:
     - 'auth-service'
     - 'user-service'
     - 'token-service'
-
 catalogs:
     development:
         '@swc/core': ^1.15.0
@@ -68,4 +78,10 @@ catalogs:
         '@node-rs/argon2': '^2.0.2'
         jose: ^6.0.12
     common:
-        '@kirillasyamov/common': ^3.0.4
+        '@kirillasyamov/common': ^3.0.6
+    test:
+        '@nestjs/testing': ^11.1.27
+        '@vitest/coverage-v8': ^4.1.0
+        unplugin-swc: ^1.5.0
+        vitest: ^4.1.0
+        'vitest-mock-extended': ^5.1.1

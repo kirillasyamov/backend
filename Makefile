@@ -1,5 +1,6 @@
 
 NPM_PUBLISH_TOKEN := $(shell node --env-file=.env -e "console.log(process.env.NPM_PUBLISH_TOKEN)")
+DOCKER_PUBLISH_TOKEN := $(shell node --env-file=.env -e "console.log(process.env.DOCKER_HUB_PUBLISH_TOKEN)")
 COMMON_PACKAGE_VERSION := $(shell node -p "require('./common/package.json').version")
 
 update-common-package-version:
@@ -45,7 +46,7 @@ format:
 	pnpm format
 
 publish-common:
-#  	mkdir -p ./common/contracts/generated
+	if not exist "common\contracts\generated" mkdir "common\contracts\generated"
 	pnpm gen
 	pnpm --filter @kirillasyamov/common build
 	cd common && pnpm publish --no-git-checks --//registry.npmjs.org/:_authToken="$(NPM_PUBLISH_TOKEN)"
@@ -65,3 +66,17 @@ publish-common-patch:
 	cd common && pnpm version patch --no-git-tag-version --no-git-checks
 	$(MAKE) publish-common
 	$(MAKE) update-common-package-version
+
+publish-docker-images:
+	docker login -u kirillasyamov --password $(DOCKER_PUBLISH_TOKEN)
+	docker buildx bake --push
+
+publish-docker-%:
+	docker login -u kirillasyamov --password $(DOCKER_PUBLISH_TOKEN)
+	docker buildx bake --push $*
+
+k8s-apply-dev:
+	kubectl apply -k k8s/overlays/dev
+
+k8s-delete-dev:
+	kubectl delete -k k8s/overlays/dev
