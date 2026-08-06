@@ -75,6 +75,9 @@ publish-docker-%:
 	docker login -u kirillasyamov --password $(DOCKER_PUBLISH_TOKEN)
 	docker buildx bake --push $*
 
+cd:
+	gh workflow run cd.yaml --ref $(shell git branch --show-current)
+
 k8s-apply-dev:
 	kubectl apply -k k8s/overlays/dev
 
