@@ -14,13 +14,15 @@ async function bootstrap() {
 	const logger = new Logger();
 
 	app.enableCors({
-		origin: 'http://localhost:3000',
+		origin: apiGatewayConfig.corsOrigins,
 		credentials: true,
 	});
 	app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
 	const swaggerDocument = SwaggerModule.createDocument(app, buildSwaggerConfig(apiVersion));
 	SwaggerModule.setup('/docs', app, swaggerDocument, { yamlDocumentUrl: '/docs-yaml' });
+
+	app.enableShutdownHooks();
 
 	const port = apiGatewayConfig.port;
 	const host = apiGatewayConfig.host;

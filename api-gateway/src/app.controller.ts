@@ -21,4 +21,11 @@ export class GatewayController {
 	async check() {
 		return this.gatewayService.healthCheck();
 	}
+
+	@Get('healthz')
+	@Public()
+	@ApiOperation({ summary: 'Liveness probe' })
+	checkz() {
+		return { status: 'OK' };
+	}
 }
