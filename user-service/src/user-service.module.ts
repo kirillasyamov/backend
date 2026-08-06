@@ -2,20 +2,17 @@ import { Module } from '@nestjs/common';
 import { UserController } from './user-service.controller';
 import { UserService } from './user-service.service';
 import { UserRepository } from './user.repository';
-import { PrismaModule } from 'common/modules/prisma';
+import { PrismaModule, ConfigModule } from '@kirillasyamov/common';
 import { PrismaClient } from '../prisma/generated/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { ConfigModule } from 'common/modules/config';
-import { prismaSchema } from 'common/configs/prisma.scheme';
-import { grpcSchema } from 'common/configs/grpc.scheme';
-import { prismaConfig } from 'common/configs/prisma.config';
+import { prismaConfig, prismaSchema, grpcSchema } from '@kirillasyamov/common/configs';
 
 @Module({
 	imports: [
 		ConfigModule.forRoot(prismaSchema, grpcSchema),
 		PrismaModule.forRootAsync({
 			isGlobal: true,
-			clientClass: PrismaClient as any,
+			clientClass: PrismaClient,
 			adapter: new PrismaPg({ connectionString: prismaConfig.connectionString }),
 		}),
 	],

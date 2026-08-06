@@ -3,8 +3,13 @@ import { Reflector } from '@nestjs/core';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { decodeJwt } from 'jose';
-import type { TokenServiceClient } from 'common/contracts/generated/token';
+import type { TokenServiceClient } from '@kirillasyamov/common/contracts/generated/token';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+
+interface RequestWithUser {
+	headers?: { authorization?: string };
+	user?: unknown;
+}
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate, OnModuleInit {
@@ -23,7 +28,7 @@ export class JwtAuthGuard implements CanActivate, OnModuleInit {
 		const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
 		if (isPublic) return true;
 
-		const request = context.switchToHttp().getRequest();
+		const request = context.switchToHttp().getRequest<RequestWithUser>();
 		const token = this.extractTokenFromHeader(request);
 		if (!token) throw new UnauthorizedException('Missing authentication token');
 
@@ -40,7 +45,7 @@ export class JwtAuthGuard implements CanActivate, OnModuleInit {
 		}
 	}
 
-	private extractTokenFromHeader(request: any): string | undefined {
+	private extractTokenFromHeader(request: RequestWithUser): string | undefined {
 		const authHeader = request.headers?.authorization;
 		if (!authHeader) return undefined;
 		const [type, token] = authHeader.split(' ');

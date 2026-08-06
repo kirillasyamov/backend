@@ -3,12 +3,11 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { GatewayController } from './app.controller';
 import { GatewayService } from './app.service';
-import { ConfigModule } from 'common/modules/config';
-import { apiGatewaySchema } from 'common/dist/configs/gateway.env.scheme.js';
-import { authSchema } from 'common/configs/auth.scheme';
+import { ConfigModule } from '@kirillasyamov/common';
+import { apiGatewaySchema, authSchema } from '@kirillasyamov/common/configs';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
-import { GrpcToHttpExceptionFilter } from 'common/filters/grpc-to-http-exception.filter';
+import { GrpcToHttpExceptionFilter } from '@kirillasyamov/common/filters';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
 @Module({

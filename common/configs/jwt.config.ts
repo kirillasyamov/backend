@@ -6,10 +6,14 @@ export interface JwtConfig {
 
 export const jwtConfig: JwtConfig = {
 	get privateKey() {
-		return process.env.JWT_PRIVATE_KEY!.replace(/\\n/g, '\n');
+		const key = process.env.JWT_PRIVATE_KEY;
+		if (!key) throw new Error('JWT_PRIVATE_KEY is not set');
+		return key.replace(/\\n/g, '\n');
 	},
 	get publicKey() {
-		return process.env.JWT_PUBLIC_KEY!.replace(/\\n/g, '\n');
+		const key = process.env.JWT_PUBLIC_KEY;
+		if (!key) throw new Error('JWT_PUBLIC_KEY is not set');
+		return key.replace(/\\n/g, '\n');
 	},
 	get issuer() {
 		return process.env.JWT_ISSUER ?? 'token-service';

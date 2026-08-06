@@ -1,11 +1,10 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import { SwaggerModule } from '@nestjs/swagger';
+import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { GatewayModule } from './app.module';
 
-import { apiGatewayConfig } from 'common/configs/gateway.env.config';
-import { buildSwaggerConfig } from 'common/configs/swagger.config';
+import { apiGatewayConfig, buildSwaggerConfig } from '@kirillasyamov/common/configs';
 
 const apiVersion = '1.0';
 
@@ -15,7 +14,7 @@ async function bootstrap() {
 	const logger = new Logger();
 
 	app.enableCors({
-		origin: 'http://localhost:3000',
+		origin: apiGatewayConfig.corsOrigins,
 		credentials: true,
 	});
 	app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
@@ -23,12 +22,14 @@ async function bootstrap() {
 	const swaggerDocument = SwaggerModule.createDocument(app, buildSwaggerConfig(apiVersion));
 	SwaggerModule.setup('/docs', app, swaggerDocument, { yamlDocumentUrl: '/docs-yaml' });
 
+	app.enableShutdownHooks();
+
 	const port = apiGatewayConfig.port;
 	const host = apiGatewayConfig.host;
 
 	await app.listen(port, host);
 
-	logger.log(`Gateway is running on http://${host}:${port}`);
-	logger.log(`Swagger docs are available at http://${host}:${port}/docs`);
+	logger.log(`Gateway is running on http://${host}:${String(port)}`);
+	logger.log(`Swagger docs are available at http://${host}:${String(port)}/docs`);
 }
-bootstrap();
+void bootstrap();

@@ -1,9 +1,13 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateTable
 CREATE TABLE "account" (
     "id" TEXT NOT NULL,
-    "email" TEXT,
+    "email" TEXT NOT NULL,
+    "login" TEXT NOT NULL,
     "is_email_verified" BOOLEAN NOT NULL DEFAULT false,
-    "role_id" TEXT NOT NULL,
+    "role_id" INTEGER NOT NULL,
     "password_hash" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -25,7 +29,7 @@ CREATE TABLE "session" (
 
 -- CreateTable
 CREATE TABLE "role" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
 
     CONSTRAINT "role_pkey" PRIMARY KEY ("id")
@@ -33,6 +37,9 @@ CREATE TABLE "role" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "account_email_key" ON "account"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "account_login_key" ON "account"("login");
 
 -- CreateIndex
 CREATE INDEX "account_role_id_idx" ON "account"("role_id");

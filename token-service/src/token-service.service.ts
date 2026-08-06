@@ -3,8 +3,8 @@ import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { SignJWT, jwtVerify, importPKCS8, importSPKI, type JWTPayload } from 'jose';
 import { randomUUID } from 'node:crypto';
-import type { GenerateJWTRequest, GenerateJWTResponse, ValidateJWTRequest, ValidateJWTResponse, InvalidateJWTRequest } from 'common/contracts/generated/token';
-import { jwtConfig } from 'common/configs/jwt.config';
+import type { GenerateJWTRequest, GenerateJWTResponse, ValidateJWTRequest, ValidateJWTResponse, InvalidateJWTRequest } from '@kirillasyamov/common/contracts/generated/token';
+import { jwtConfig } from '@kirillasyamov/common/configs';
 import { BlacklistService } from './modules/blacklist/blacklist.service';
 
 @Injectable()
@@ -25,7 +25,7 @@ export class TokenService {
 				.setIssuer(jwtConfig.issuer)
 				.setJti(randomUUID())
 				.setIssuedAt()
-				.setExpirationTime(`${request.ttlSeconds}s`)
+				.setExpirationTime(`${String(request.ttlSeconds)}s`)
 				.sign(privateKey);
 
 			this.logger.debug(`Generated JWT for sub=${request.sub}, aud=${request.aud}`);
@@ -64,7 +64,7 @@ export class TokenService {
 			if (ttl <= 0) return;
 
 			await this.blacklist.addToBlacklist(request.jsonWebToken, ttl);
-			this.logger.debug(`Invalidated JWT with jti=${payload.jti}, ttl=${ttl}s`);
+			this.logger.debug(`Invalidated JWT with jti=${payload.jti ?? 'unknown'}, ttl=${String(ttl)}s`);
 		} catch (error) {
 			if (error instanceof RpcException) throw error;
 			throw new RpcException({

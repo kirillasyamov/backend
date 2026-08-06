@@ -1,37 +1,88 @@
 {
-	"name": "common",
-	"version": "1.0.0",
-	"description": "",
-	"main": "index.js",
+	"name": "@kirillasyamov/common",
+	"version": "3.0.6",
+	"description": "Shared contracts, configs, modules and filters for the application",
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist",
+		"contracts/proto",
+		"README.md",
+		"LICENSE"
+	],
 	"exports": {
-		"./*": {
-			"types": "./dist/*.d.ts",
-			"default": "./*"
-		}
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./configs": {
+			"types": "./dist/configs/index.d.ts",
+			"default": "./dist/configs/index.js"
+		},
+		"./filters": {
+			"types": "./dist/filters/index.d.ts",
+			"default": "./dist/filters/index.js"
+		},
+		"./modules/*": {
+			"types": "./dist/modules/*.d.ts",
+			"default": "./dist/modules/*.js"
+		},
+		"./enums/*": {
+			"types": "./dist/enums/*.d.ts",
+			"default": "./dist/enums/*.js"
+		},
+		"./contracts/generated/*": {
+			"types": "./dist/contracts/generated/*.d.ts",
+			"default": "./dist/contracts/generated/*.js"
+		},
+		"./contracts/proto/*": "./contracts/proto/*",
+		"./package.json": "./package.json"
 	},
-	"keywords": [],
+	"scripts": {
+		"build": "tsup && tsc -p tsconfig.build.json"
+	},
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org"
+	},
+	"keywords": [
+		"nestjs",
+		"grpc",
+		"microservices",
+		"prisma",
+		"redis"
+	],
 	"author": "kirillasyamov",
 	"license": "ISC",
-	"type": "module",
 	"dependencies": {
-		"@grpc/grpc-js": "catalog:grpc",
-		"@grpc/proto-loader": "catalog:grpc",
-		"@nestjs/common": "catalog:nest",
-		"@nestjs/config": "catalog:nest",
-		"@nestjs/core": "catalog:nest",
-		"@nestjs/microservices": "catalog:nest",
-		"@prisma/client": "catalog:database",
-		"class-transformer": "catalog:validation",
-		"class-validator": "catalog:validation",
-		"reflect-metadata": "catalog:runtime",
-		"rxjs": "catalog:runtime",
-		"joi": "catalog:validation",
-		"@nestjs/swagger": "catalog:nest",
-		"ioredis": "catalog:database"
+		"grpc-health-check": "^2.1.0",
+		"ioredis": "^5.6.1",
+		"joi": "^17.13.3"
+	},
+	"peerDependencies": {
+		"@grpc/grpc-js": "^1.14.4",
+		"@nestjs/common": "^11.1.27",
+		"@nestjs/config": "^4.0.4",
+		"@nestjs/core": "^11.1.27",
+		"@nestjs/microservices": "^11.1.27",
+		"@nestjs/swagger": "^11.4.6",
+		"@prisma/client": "^7.0.0",
+		"reflect-metadata": "^0.2.2",
+		"rxjs": "^7.8.2"
 	},
 	"devDependencies": {
-		"@types/node": "catalog:development",
-		"prisma": "catalog:database",
-		"typescript": "catalog:development"
+		"@grpc/grpc-js": "^1.14.4",
+		"@nestjs/common": "^11.1.27",
+		"@nestjs/config": "^4.0.4",
+		"@nestjs/core": "^11.1.27",
+		"@nestjs/microservices": "^11.1.27",
+		"@nestjs/swagger": "^11.4.6",
+		"@prisma/client": "^7.0.0",
+		"@types/node": "^26.0.1",
+		"reflect-metadata": "^0.2.2",
+		"rxjs": "^7.8.2",
+		"tsup": "^8.5.0",
+		"typescript": "^6.0.3"
 	}
 }

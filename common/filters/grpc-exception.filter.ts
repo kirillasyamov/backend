@@ -13,7 +13,7 @@ const GRPC_STATUS_MAP: Record<string, number> = {
 export class GrpcExceptionFilter {
 	private readonly logger = new Logger(GrpcExceptionFilter.name);
 
-	catch(exception: unknown, host: ArgumentsHost): Observable<never> {
+	catch(exception: unknown, _host: ArgumentsHost): Observable<never> {
 		if (exception instanceof RpcException) {
 			return throwError(() => exception.getError());
 		}

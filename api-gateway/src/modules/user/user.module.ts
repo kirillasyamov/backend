@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { fileURLToPath } from 'node:url';
+import { authProtoPath, userProtoPath, healthProtoPath } from '@kirillasyamov/common';
+import { grpcServiceConfig } from '@kirillasyamov/common/configs';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
-
-const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/proto/health/v1/health.proto'));
 
 @Module({
 	imports: [
@@ -15,8 +14,9 @@ const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/pro
 					transport: Transport.GRPC,
 					options: {
 						package: ['auth.v1', 'grpc.health.v1'],
-						protoPath: ['../common/contracts/proto/auth.proto', healthProtoPath],
-						url: 'localhost:50002',
+						protoPath: [authProtoPath, healthProtoPath],
+						url: grpcServiceConfig.authServiceUrl,
+						channelOptions: grpcServiceConfig.grpcChannelOptions,
 					},
 				}),
 			},
@@ -26,8 +26,9 @@ const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/pro
 					transport: Transport.GRPC,
 					options: {
 						package: ['user.v1', 'grpc.health.v1'],
-						protoPath: ['../common/contracts/proto/user.proto', healthProtoPath],
-						url: 'localhost:50051',
+						protoPath: [userProtoPath, healthProtoPath],
+						url: grpcServiceConfig.userServiceUrl,
+						channelOptions: grpcServiceConfig.grpcChannelOptions,
 					},
 				}),
 			},

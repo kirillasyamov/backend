@@ -3,9 +3,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { fileURLToPath } from 'node:url';
-
-const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/proto/health/v1/health.proto'));
+import { authProtoPath, userProtoPath, tokenProtoPath, healthProtoPath } from '@kirillasyamov/common';
+import { grpcServiceConfig } from '@kirillasyamov/common/configs';
 
 @Module({
 	imports: [
@@ -16,8 +15,9 @@ const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/pro
 					transport: Transport.GRPC,
 					options: {
 						package: ['auth.v1', 'grpc.health.v1'],
-						protoPath: ['../common/contracts/proto/auth.proto', healthProtoPath],
-						url: 'localhost:50002',
+						protoPath: [authProtoPath, healthProtoPath],
+						url: grpcServiceConfig.authServiceUrl,
+						channelOptions: grpcServiceConfig.grpcChannelOptions,
 					},
 				}),
 			},
@@ -27,8 +27,9 @@ const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/pro
 					transport: Transport.GRPC,
 					options: {
 						package: ['user.v1', 'grpc.health.v1'],
-						protoPath: ['../common/contracts/proto/user.proto', healthProtoPath],
-						url: 'localhost:50051',
+						protoPath: [userProtoPath, healthProtoPath],
+						url: grpcServiceConfig.userServiceUrl,
+						channelOptions: grpcServiceConfig.grpcChannelOptions,
 					},
 				}),
 			},
@@ -38,8 +39,9 @@ const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/pro
 					transport: Transport.GRPC,
 					options: {
 						package: ['token.v1', 'grpc.health.v1'],
-						protoPath: ['../common/contracts/proto/token.proto', healthProtoPath],
-						url: 'localhost:50004',
+						protoPath: [tokenProtoPath, healthProtoPath],
+						url: grpcServiceConfig.tokenServiceUrl,
+						channelOptions: grpcServiceConfig.grpcChannelOptions,
 					},
 				}),
 			},

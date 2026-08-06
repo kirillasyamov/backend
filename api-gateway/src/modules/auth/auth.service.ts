@@ -1,10 +1,10 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { TokenPair } from 'common/contracts/generated/auth';
-import { AuthServiceClient } from 'common/contracts/generated/auth';
-import { UserServiceClient } from 'common/contracts/generated/user';
-import { Empty } from 'common/contracts/generated/google/protobuf/empty';
+import { TokenPair } from '@kirillasyamov/common/contracts/generated/auth';
+import { AuthServiceClient } from '@kirillasyamov/common/contracts/generated/auth';
+import { UserServiceClient } from '@kirillasyamov/common/contracts/generated/user';
+import { Empty } from '@kirillasyamov/common/contracts/generated/google/protobuf/empty';
 
 import type {
 	CreateAccountRequest,
@@ -14,9 +14,9 @@ import type {
 	CreateSessionResponse,
 	RevokeSessionRequest,
 	RefreshSessionRequest,
-} from 'common/contracts/generated/auth';
+} from '@kirillasyamov/common/contracts/generated/auth';
 
-import type { CreateUserRequest, CreateUserResponse, DeleteUserRequest } from 'common/contracts/generated/user';
+import type { CreateUserRequest, CreateUserResponse, DeleteUserRequest } from '@kirillasyamov/common/contracts/generated/user';
 
 interface SignUpRequest {
 	login: string;
@@ -83,7 +83,7 @@ export class AuthService implements OnModuleInit {
 		return firstValueFrom(this.authGrpcService.createSession(request));
 	}
 
-	revokeSession(request: RevokeSessionRequest): Promise<Empty> {
+	async revokeSession(request: RevokeSessionRequest): Promise<Empty> {
 		return firstValueFrom(this.authGrpcService.revokeSession(request));
 	}
 
@@ -93,30 +93,27 @@ export class AuthService implements OnModuleInit {
 		return tokens;
 	}
 
-	public async signIn(request: {
-		login?: string;
-		email?: string;
-		password: string;
-		device: string;
-	}): Promise<TokenPair> {
+	public async signIn(request: { login?: string; email?: string; password: string; device: string }): Promise<TokenPair> {
 		const { login, email, password, device } = request;
 
-		if (!login && !email) {
-			throw new Error('Either login or email must be provided');
+		let account: CreateAccountResponse;
+		if (login) {
+			account = await firstValueFrom(this.authGrpcService.getAccountByLogin({ login }));
+		} else {
+			if (!email) {
+				throw new Error('Either login or email must be provided');
+			}
+			account = await firstValueFrom(this.authGrpcService.getAccountByEmail({ email }));
 		}
 
-		const account = login
-			? await firstValueFrom(this.authGrpcService.getAccountByLogin({ login }))
-			: await firstValueFrom(this.authGrpcService.getAccountByEmail({ email: email! }));
-
 		const { tokens } = await this.createSession({
-				accountId: account.accountId,
-				roleId: account.roleId,
-				password,
-				device,
-				expiresAt: undefined,
-				createdAt: undefined,
-			});
+			accountId: account.accountId,
+			roleId: account.roleId,
+			password,
+			device,
+			expiresAt: undefined,
+			createdAt: undefined,
+		});
 
 		if (tokens) return tokens;
 		throw new Error('Failed to create access and refresh tokens');

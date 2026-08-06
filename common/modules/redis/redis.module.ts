@@ -28,7 +28,7 @@ export class RedisModule {
 	static forRootAsync(options: RedisModuleAsyncOptions): DynamicModule {
 		const redisProvider: Provider = {
 			provide: REDIS_CLIENT,
-			useFactory: async (...args: any[]) => {
+			useFactory: async (...args: unknown[]) => {
 				const opts = await options.useFactory(...args);
 				const client = new Redis(opts);
 				await client.ping();

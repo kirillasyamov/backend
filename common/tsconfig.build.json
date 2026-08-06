@@ -1,0 +1,16 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"composite": false,
+		"incremental": false,
+		"tsBuildInfoFile": null,
+		"declaration": true,
+		"declarationMap": true,
+		"emitDeclarationOnly": true,
+		"outDir": "./dist",
+		"rootDir": ".",
+		"noEmit": false
+	},
+	"include": ["index.ts", "modules/**/*", "utils/**/*", "contracts/**/*", "configs/**/*", "filters/**/*", "enums/**/*"],
+	"exclude": ["node_modules", "dist"]
+}

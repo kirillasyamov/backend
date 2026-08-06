@@ -20,8 +20,8 @@ import type {
 	GetAccountByEmailResponse,
 	GetAccountByIdRequest,
 	GetAccountByIdResponse,
-} from 'common/contracts/generated/auth';
-import { AuthServiceControllerMethods } from 'common/contracts/generated/auth';
+} from '@kirillasyamov/common/contracts/generated/auth';
+import { AuthServiceControllerMethods } from '@kirillasyamov/common/contracts/generated/auth';
 import { AuthService } from './auth-service.service';
 
 @Controller()
@@ -30,7 +30,7 @@ export class AuthServiceController implements AuthServiceControllerInterface {
 	constructor(private readonly authService: AuthService) {}
 
 	@GrpcMethod('Health', 'Check')
-	public async check(): Promise<{ status: number }> {
+	public check(): { status: number } {
 		return { status: 1 };
 	}
 
@@ -62,21 +62,15 @@ export class AuthServiceController implements AuthServiceControllerInterface {
 		return this.authService.refreshSession(request);
 	}
 
-	public async getAccountByLogin(
-		request: GetAccountByLoginRequest,
-	): Promise<GetAccountByLoginResponse> {
+	public async getAccountByLogin(request: GetAccountByLoginRequest): Promise<GetAccountByLoginResponse> {
 		return this.authService.getAccountByLogin(request);
 	}
 
-	public async getAccountByEmail(
-		request: GetAccountByEmailRequest,
-	): Promise<GetAccountByEmailResponse> {
+	public async getAccountByEmail(request: GetAccountByEmailRequest): Promise<GetAccountByEmailResponse> {
 		return this.authService.getAccountByEmail(request);
 	}
 
-	public async getAccountById(
-		request: GetAccountByIdRequest,
-	): Promise<GetAccountByIdResponse> {
+	public async getAccountById(request: GetAccountByIdRequest): Promise<GetAccountByIdResponse> {
 		return this.authService.getAccountById(request);
 	}
 

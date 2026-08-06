@@ -7,8 +7,8 @@ import type {
 	ValidateJWTRequest,
 	ValidateJWTResponse,
 	InvalidateJWTRequest,
-} from 'common/contracts/generated/token';
-import { TokenServiceControllerMethods } from 'common/contracts/generated/token';
+} from '@kirillasyamov/common/contracts/generated/token';
+import { TokenServiceControllerMethods } from '@kirillasyamov/common/contracts/generated/token';
 import { TokenService } from './token-service.service';
 
 @Controller()
@@ -17,7 +17,7 @@ export class TokenServiceController implements TokenServiceControllerInterface {
 	constructor(private readonly tokenService: TokenService) {}
 
 	@GrpcMethod('Health', 'Check')
-	public async check(): Promise<{ status: number }> {
+	public check(): { status: number } {
 		return { status: 1 };
 	}
 
