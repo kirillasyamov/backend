@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint';
 
 export default [
 	{
-		ignores: ['eslint.config.mjs', '**/tsup.config.{ts,js,mjs,cjs}'],
+		ignores: ['eslint.config.mjs', '**/tsup.config.{ts,js,mjs,cjs}', '**/vitest.config.ts'],
 	},
 	eslint.configs.recommended,
 	...tseslint.configs.strictTypeChecked,
@@ -50,6 +50,7 @@ export default [
 		rules: {
 			'@typescript-eslint/no-explicit-any': 'off',
 			'@typescript-eslint/no-unsafe-assignment': 'off',
+			'@typescript-eslint/unbound-method': 'off',
 		},
 	},
 ];
