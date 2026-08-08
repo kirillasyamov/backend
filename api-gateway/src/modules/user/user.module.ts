@@ -3,6 +3,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { authProtoPath, userProtoPath, healthProtoPath } from '@kirillasyamov/common';
 import { grpcServiceConfig } from '@kirillasyamov/common/configs';
 import { UserController } from './user.controller';
+import { UserBalanceController } from './balance.controller';
 import { UserService } from './user.service';
 
 @Module({
@@ -34,7 +35,7 @@ import { UserService } from './user.service';
 			},
 		]),
 	],
-	controllers: [UserController],
+	controllers: [UserController, UserBalanceController],
 	providers: [UserService],
 	exports: [UserService],
 })

@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
+import { Prisma, User } from '../prisma/generated/client';
 import { UserRepository } from './user.repository';
 import {
 	CreateUserRequest,
@@ -13,20 +14,37 @@ import {
 	UpdateUserRequest,
 	UpdateUserResponse,
 	DeleteUserRequest,
+	TransferBalanceRequest,
+	TransferBalanceResponse,
+	UserProfileData,
 } from '@kirillasyamov/common/contracts/generated/user';
+import type { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Interval, SchedulerRegistry } from '@nestjs/schedule';
+import { queueConfig } from '@kirillasyamov/common/configs';
 
 @Injectable()
 export class UserService {
-	constructor(private readonly userRepository: UserRepository) {}
+	private readonly logger = new Logger(UserService.name);
+	constructor(
+		private readonly userRepository: UserRepository,
+		@InjectQueue('balance-reset') private readonly balanceResetQueue: Queue,
+		private readonly schedulerRegistry: SchedulerRegistry,
+	) {}
+
+	private adaptToProfile(user: User): UserProfileData {
+		return { login: user.login, email: user.email, age: user.age, bio: user.bio, balance: user.balance.toFixed(2) };
+	}
 
 	public async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
 		try {
-			const profile = request.userProfile;
-			if (!profile) {
-				throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'User profile is required' });
-			}
-			const user = await this.userRepository.reactivateOrCreate(profile);
-			return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio }, profileId: user.id };
+			const user = await this.userRepository.reactivateOrCreate({
+				login: request.login,
+				email: request.email,
+				age: request.age,
+				bio: request.bio,
+			});
+			return { userProfile: this.adaptToProfile(user), profileId: user.id };
 		} catch (error) {
 			if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
 				const target = (error.meta?.target as string[] | undefined) ?? [];
@@ -47,7 +65,7 @@ export class UserService {
 		const user = await this.userRepository.findByLogin(login);
 		if (!user) throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
 
-		return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio } };
+		return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio, balance: user.balance.toFixed(2) } };
 	}
 
 	public async getUsers(request: GetUsersRequest): Promise<GetUsersResponse> {
@@ -55,7 +73,7 @@ export class UserService {
 		const limit = request.limit || 10;
 		const { users, total } = await this.userRepository.findAll(page, limit);
 		return {
-			users: users.map(u => ({ login: u.login, email: u.email, age: u.age, bio: u.bio })),
+			users: users.map(u => this.adaptToProfile(u)),
 			total,
 			page,
 			limit,
@@ -73,7 +91,7 @@ export class UserService {
 			bio: request.bio,
 		});
 
-		return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio } };
+		return { userProfile: this.adaptToProfile(user) };
 	}
 
 	public async deleteUser(request: DeleteUserRequest): Promise<void> {
@@ -100,5 +118,48 @@ export class UserService {
 			}
 			throw error;
 		}
+	}
+
+	public async transferBalance(request: TransferBalanceRequest): Promise<TransferBalanceResponse> {
+		const amount = this.parseAmount(request.amount);
+		const sender = await this.userRepository.findByLogin(request.senderLogin);
+		if (!sender) throw new RpcException({ code: status.NOT_FOUND, message: 'Sender not found' });
+		const recipient = await this.userRepository.findByLogin(request.recipientLogin);
+		if (!recipient) throw new RpcException({ code: status.NOT_FOUND, message: 'Recipient not found' });
+		if (amount.greaterThan(sender.balance)) throw new RpcException({ code: status.FAILED_PRECONDITION, message: 'Insufficient funds' });
+
+		try {
+			await this.userRepository.transferBalance(sender.id, recipient.id, amount, request.idempotencyKey);
+		} catch (error) {
+			if (error instanceof Error) throw new RpcException({ code: status.FAILED_PRECONDITION, message: error.message });
+			throw error;
+		}
+		const updated = await this.userRepository.findByLogin(request.senderLogin);
+		if (!updated) throw new RpcException({ code: status.NOT_FOUND, message: 'Sender not found' });
+		return { updatedBalance: updated.balance.toFixed(2) };
+	}
+
+	private parseAmount(value: string): Prisma.Decimal {
+		const decimal = new Prisma.Decimal(value);
+		if (!decimal.isFinite()) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'Invalid amount' });
+		return decimal;
+	}
+
+	@Interval('balance-reset', queueConfig.resetIntervalMs)
+	public async enqueueScheduledReset(): Promise<void> {
+		this.logger.log(`Enqueueing balance reset job (every ${String(queueConfig.resetIntervalMs / 1000)}s)`);
+		const job = await this.balanceResetQueue.add('reset', {}, { jobId: 'balance-reset' });
+		this.logger.log(`Balance reset job enqueued: ${job.id ?? 'unknown'}`);
+	}
+
+	public async resetBalance(): Promise<void> {
+		this.logger.log('Manual balance reset triggered');
+		await this.enqueueScheduledReset();
+		this.schedulerRegistry.deleteInterval('balance-reset');
+		this.schedulerRegistry.addInterval(
+			'balance-reset',
+			setInterval(() => void this.enqueueScheduledReset(), queueConfig.resetIntervalMs),
+		);
+		this.logger.log(`Balance reset restarted (every ${String(queueConfig.resetIntervalMs / 1000)}s)`);
 	}
 }

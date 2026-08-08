@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PRISMA_CLIENT } from '@kirillasyamov/common';
-import { User, type PrismaClient } from '../prisma/generated/client';
+import { User, Prisma, type PrismaClient } from '../prisma/generated/client';
 
 @Injectable()
 export class UserRepository {
@@ -51,5 +51,22 @@ export class UserRepository {
 			where: { id },
 			data: { deletedAt: new Date() },
 		});
+	}
+
+	public async transferBalance(fromId: string, toId: string, amount: Prisma.Decimal, idempotencyKey: string): Promise<void> {
+		try {
+			await this.prisma.$transaction(async tx => {
+				await tx.transfer.create({ data: { idempotencyKey, fromUserId: fromId, toUserId: toId, amount } });
+				await tx.user.update({ where: { id: fromId }, data: { balance: { decrement: amount } } });
+				await tx.user.update({ where: { id: toId }, data: { balance: { increment: amount } } });
+			});
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return;
+			throw error;
+		}
+	}
+
+	public async resetBalances(): Promise<void> {
+		await this.prisma.user.updateMany({ where: { deletedAt: null }, data: { balance: 0 } });
 	}
 }

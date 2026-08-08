@@ -11,6 +11,8 @@ import type {
 	UpdateUserRequest,
 	UpdateUserResponse,
 	DeleteUserRequest,
+	TransferBalanceRequest,
+	TransferBalanceResponse,
 } from '@kirillasyamov/common/contracts/generated/user';
 import { UserServiceControllerMethods } from '@kirillasyamov/common/contracts/generated/user';
 
@@ -42,5 +44,13 @@ export class UserController {
 
 	public async deleteUser(data: DeleteUserRequest): Promise<void> {
 		return this.userService.deleteUser(data);
+	}
+
+	public async transferBalance(data: TransferBalanceRequest): Promise<TransferBalanceResponse> {
+		return this.userService.transferBalance(data);
+	}
+
+	public async resetBalance(): Promise<void> {
+		return this.userService.resetBalance();
 	}
 }

@@ -10,6 +10,9 @@ service UserService {
   	rpc GetUsers (GetUsersRequest) returns (GetUsersResponse);
   	rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse);
 	rpc DeleteUser (DeleteUserRequest) returns (google.protobuf.Empty);
+
+	rpc TransferBalance (TransferBalanceRequest) returns (TransferBalanceResponse);
+	rpc ResetBalance (google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 message UserProfileData {
@@ -17,10 +20,14 @@ message UserProfileData {
 	string email = 2;
 	uint32 age = 3;
 	string bio = 4;
+	string balance = 5;
 }
 
 message CreateUserRequest {
-	UserProfileData userProfile = 1;
+	string login = 1;
+	string email = 2;
+	uint32 age = 3;
+	string bio = 4;
 }
 
 message CreateUserResponse {
@@ -67,3 +74,15 @@ message DeleteUserRequest {
 		string login = 2;
 	}
 }
+
+message TransferBalanceRequest {
+	string idempotencyKey = 1;
+	string senderLogin = 2;
+	string recipientLogin = 3;
+	string amount = 4;
+}
+
+message TransferBalanceResponse {
+	string updatedBalance = 1;
+}
+

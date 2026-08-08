@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PRISMA_CLIENT } from '@kirillasyamov/common';
-import { type PrismaClient, Account } from '../prisma/generated/client';
+import { type PrismaClient, Account, Role } from '../prisma/generated/client';
 
 export interface RegistrationData {
 	email: string;
@@ -8,6 +8,7 @@ export interface RegistrationData {
 	passwordHash: string;
 	roleId: number;
 }
+export type AccountWithRole = Account & { role: Role };
 
 @Injectable()
 export class AccountRepository {
@@ -25,8 +26,8 @@ export class AccountRepository {
 		return this.prisma.account.findUnique({ where: { email } });
 	}
 
-	public async findById(id: string): Promise<Account | null> {
-		return this.prisma.account.findUnique({ where: { id } });
+	public async findById(id: string): Promise<AccountWithRole | null> {
+		return this.prisma.account.findUnique({ where: { id }, include: { role: true } });
 	}
 
 	public async updatePassword(id: string, passwordHash: string): Promise<Account> {

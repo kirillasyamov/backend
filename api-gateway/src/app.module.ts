@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { GrpcToHttpExceptionFilter } from '@kirillasyamov/common/filters';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from './modules/auth/guards/roles.guard';
 
 @Module({
 	imports: [ConfigModule.forRoot(apiGatewaySchema, authSchema), ThrottlerModule.forRoot([{ ttl: 60000, limit: 5 }]), AuthModule, UserModule],
@@ -16,8 +17,9 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 	providers: [
 		GatewayService,
 		JwtAuthGuard,
-		{ provide: APP_GUARD, useClass: JwtAuthGuard },
 		{ provide: APP_GUARD, useClass: ThrottlerGuard },
+		{ provide: APP_GUARD, useClass: JwtAuthGuard },
+		{ provide: APP_GUARD, useClass: RolesGuard },
 		{ provide: APP_FILTER, useClass: GrpcToHttpExceptionFilter },
 	],
 })

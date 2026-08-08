@@ -1,6 +1,6 @@
 {
 	"name": "@kirillasyamov/common",
-	"version": "3.0.6",
+	"version": "3.0.10",
 	"description": "Shared contracts, configs, modules and filters for the application",
 	"type": "module",
 	"main": "./dist/index.js",

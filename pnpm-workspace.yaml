@@ -12,17 +12,20 @@ allowBuilds:
     '@swc/core': true
     '@prisma/client': true
     '@prisma/engines': true
-    '@scarf/scarf': false
+    '@nestjs/bull-shared': true
+    'msgpackr-extract': true
+    '@nestjs/bullmq': true
     prisma: true
     protobufjs: true
     esbuild: true
     shellEmulator: true
 engineStrict: true
 catalogMode: prefer
-
 minimumReleaseAgeExclude:
     - '@kirillasyamov/common'
-
+    - '@nestjs/bull-shared@11.0.5'
+    - '@nestjs/bullmq@11.0.5'
+    - bullmq@6.0.9
 packages:
     - 'common'
     - 'api-gateway'
@@ -78,10 +81,14 @@ catalogs:
         '@node-rs/argon2': '^2.0.2'
         jose: ^6.0.12
     common:
-        '@kirillasyamov/common': ^3.0.6
+        '@kirillasyamov/common': ^3.0.10
     test:
         '@nestjs/testing': ^11.1.27
         '@vitest/coverage-v8': ^4.1.0
         unplugin-swc: ^1.5.0
         vitest: ^4.1.0
         'vitest-mock-extended': ^5.1.1
+    queue:
+        '@nestjs/bullmq': ^11.0.5
+        'bullmq': ^6.0.9
+        '@nestjs/schedule': ^6.1.3
