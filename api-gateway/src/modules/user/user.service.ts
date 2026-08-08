@@ -3,7 +3,15 @@ import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
 import type { AuthServiceClient } from '@kirillasyamov/common/contracts/generated/auth';
-import type { UserServiceClient, CreateUserResponse, GetUserResponse, GetUsersResponse, UpdateUserResponse } from '@kirillasyamov/common/contracts/generated/user';
+import type {
+	UserServiceClient,
+	CreateUserResponse,
+	GetUserResponse,
+	GetUsersResponse,
+	UpdateUserResponse,
+	TransferBalanceResponse,
+	TransferBalanceRequest,
+} from '@kirillasyamov/common/contracts/generated/user';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -22,7 +30,7 @@ export class UserService implements OnModuleInit {
 
 	public async createUser(accountId: string, data: { age: number; bio: string }): Promise<CreateUserResponse> {
 		const { login, email } = await firstValueFrom(this.authGrpcService.getAccountById({ id: accountId }));
-		return firstValueFrom(this.userGrpcService.createUser({ userProfile: { login, email, ...data } }));
+		return firstValueFrom(this.userGrpcService.createUser({ login, email, ...data }));
 	}
 
 	public async updateUser(accountId: string, data: { age?: number; bio?: string }): Promise<UpdateUserResponse> {
@@ -46,5 +54,10 @@ export class UserService implements OnModuleInit {
 	public async deleteUser(accountId: string): Promise<void> {
 		const { login } = await firstValueFrom(this.authGrpcService.getAccountById({ id: accountId }));
 		await firstValueFrom(this.userGrpcService.deleteUser({ login }));
+	}
+
+	public async transferBalance(accountId: string, request: Omit<TransferBalanceRequest, 'senderLogin'>): Promise<TransferBalanceResponse> {
+		const { login: senderLogin } = await firstValueFrom(this.authGrpcService.getAccountById({ id: accountId }));
+		return firstValueFrom(this.userGrpcService.transferBalance({ senderLogin, ...request }));
 	}
 }

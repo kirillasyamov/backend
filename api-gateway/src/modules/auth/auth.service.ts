@@ -56,7 +56,7 @@ export class AuthService implements OnModuleInit {
 				expiresAt: undefined,
 				createdAt: undefined,
 			});
-			const user = await this.createUser({ userProfile: { login, email, age, bio } });
+			const user = await this.createUser({ login, email, age, bio });
 			profileId = user.profileId;
 			if (session.tokens) return session.tokens;
 		} catch (error) {
