@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { TransferBalanceDto } from './dto/transfer-balance.dto';
 import { UserService } from './user.service';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Balance')
 @Controller('balance')
@@ -22,6 +23,7 @@ export class UserBalanceController {
 	@ApiBearerAuth()
 	@ApiOperation({ summary: 'Reset all balances' })
 	@Post('reset')
+	@Roles('admin')
 	@HttpCode(HttpStatus.OK)
 	public async resetBalance(): Promise<void> {
 		await this.userService.resetBalance();
