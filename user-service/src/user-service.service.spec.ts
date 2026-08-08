@@ -5,6 +5,7 @@ import { UserService } from './user-service.service';
 import { UserRepository } from './user.repository';
 import { vi } from 'vitest';
 import { getQueueToken } from '@nestjs/bullmq';
+import { SchedulerRegistry } from '@nestjs/schedule/dist/scheduler.registry';
 
 describe('UserService', () => {
 	let service: UserService;
@@ -16,6 +17,7 @@ describe('UserService', () => {
 			providers: [
 				UserService,
 				{ provide: UserRepository, useValue: userRepository },
+				{ provide: SchedulerRegistry, useValue: { deleteInterval: vi.fn(), addInterval: vi.fn() } },
 				{ provide: getQueueToken('balance-reset'), useValue: { add: vi.fn().mockResolvedValue(undefined) } },
 			],
 		}).compile();

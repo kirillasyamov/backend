@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
@@ -20,12 +20,16 @@ import {
 } from '@kirillasyamov/common/contracts/generated/user';
 import type { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
+import { Interval, SchedulerRegistry } from '@nestjs/schedule';
+import { queueConfig } from '@kirillasyamov/common/configs';
 
 @Injectable()
 export class UserService {
+	private readonly logger = new Logger(UserService.name);
 	constructor(
 		private readonly userRepository: UserRepository,
 		@InjectQueue('balance-reset') private readonly balanceResetQueue: Queue,
+		private readonly schedulerRegistry: SchedulerRegistry,
 	) {}
 
 	private adaptToProfile(user: User): UserProfileData {
@@ -141,7 +145,21 @@ export class UserService {
 		return decimal;
 	}
 
+	@Interval('balance-reset', queueConfig.resetIntervalMs)
+	public async enqueueScheduledReset(): Promise<void> {
+		this.logger.log(`Enqueueing balance reset job (every ${String(queueConfig.resetIntervalMs / 1000)}s)`);
+		const job = await this.balanceResetQueue.add('reset', {}, { jobId: 'balance-reset' });
+		this.logger.log(`Balance reset job enqueued: ${job.id ?? 'unknown'}`);
+	}
+
 	public async resetBalance(): Promise<void> {
-		await this.balanceResetQueue.add('reset', {}, { jobId: 'balance-reset' });
+		this.logger.log('Manual balance reset triggered');
+		await this.enqueueScheduledReset();
+		this.schedulerRegistry.deleteInterval('balance-reset');
+		this.schedulerRegistry.addInterval(
+			'balance-reset',
+			setInterval(() => void this.enqueueScheduledReset(), queueConfig.resetIntervalMs),
+		);
+		this.logger.log(`Balance reset restarted (every ${String(queueConfig.resetIntervalMs / 1000)}s)`);
 	}
 }

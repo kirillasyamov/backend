@@ -81,7 +81,7 @@ catalogs:
         '@node-rs/argon2': '^2.0.2'
         jose: ^6.0.12
     common:
-        '@kirillasyamov/common': ^3.0.9
+        '@kirillasyamov/common': ^3.0.10
     test:
         '@nestjs/testing': ^11.1.27
         '@vitest/coverage-v8': ^4.1.0
@@ -91,3 +91,4 @@ catalogs:
     queue:
         '@nestjs/bullmq': ^11.0.5
         'bullmq': ^6.0.9
+        '@nestjs/schedule': ^6.1.3

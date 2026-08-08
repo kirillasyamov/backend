@@ -5,8 +5,9 @@ import { UserRepository } from './user.repository';
 import { PrismaModule, ConfigModule } from '@kirillasyamov/common';
 import { PrismaClient } from '../prisma/generated/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { prismaConfig, prismaSchema, grpcSchema, redisSchema, redisConfig } from '@kirillasyamov/common/configs';
+import { prismaConfig, prismaSchema, grpcSchema, redisSchema, redisConfig, queueSchema } from '@kirillasyamov/common/configs';
 import type { Job } from 'bullmq';
+import { ScheduleModule } from '@nestjs/schedule';
 import { BullModule, WorkerHost, Processor } from '@nestjs/bullmq';
 
 @Processor('balance-reset')
@@ -22,7 +23,8 @@ class BalanceProcessor extends WorkerHost {
 
 @Module({
 	imports: [
-		ConfigModule.forRoot(prismaSchema, grpcSchema, redisSchema),
+		ScheduleModule.forRoot(),
+		ConfigModule.forRoot(prismaSchema, grpcSchema, redisSchema, queueSchema),
 		PrismaModule.forRootAsync({
 			isGlobal: true,
 			clientClass: PrismaClient,

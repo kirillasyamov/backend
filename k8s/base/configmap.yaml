@@ -17,3 +17,4 @@ data:
     POSTGRES_PORT: '5432'
     EXP_DAYS: '30'
     JWT_ISSUER: 'token-service'
+    RESET_INTERVAL_MINUTES: '10'
