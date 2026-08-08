@@ -18,4 +18,12 @@ export class UserBalanceController {
 	public async transferBalance(@CurrentUser('sub') accountId: string, @Body() dto: TransferBalanceDto) {
 		return await this.userService.transferBalance(accountId, dto);
 	}
+
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Reset all balances' })
+	@Post('reset')
+	@HttpCode(HttpStatus.OK)
+	public async resetBalance(): Promise<void> {
+		await this.userService.resetBalance();
+	}
 }

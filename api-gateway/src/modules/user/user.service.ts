@@ -60,4 +60,8 @@ export class UserService implements OnModuleInit {
 		const { login: senderLogin } = await firstValueFrom(this.authGrpcService.getAccountById({ id: accountId }));
 		return firstValueFrom(this.userGrpcService.transferBalance({ senderLogin, ...request }));
 	}
+
+	public async resetBalance(): Promise<void> {
+		await firstValueFrom(this.userGrpcService.resetBalance({}));
+	}
 }
