@@ -7,6 +7,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { AccountRepository } from './account.repository';
 import { SessionRepository } from './session.repository';
 import { RoleRepository } from './role.repository';
+const DEFAULT_ROLE_ID = 1;
 import type {
 	AuthServiceController,
 	CreateAccountRequest,
@@ -54,13 +55,13 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 				email: request.email,
 				login: request.login,
 				passwordHash: await hash(request.password),
-				roleId: 1,
+				roleId: DEFAULT_ROLE_ID,
 			});
 			return {
 				accountId: account.id,
 				login: request.login,
 				email: account.email,
-				roleId: 1,
+				roleId: DEFAULT_ROLE_ID,
 			};
 		} catch (error) {
 			if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -125,7 +126,7 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 			this.tokenGrpcService.generateJwt({
 				sub: request.accountId,
 				aud: 'api-gateway',
-				extraClaims: { sid: session.id },
+				extraClaims: { sid: session.id, role: account.role.name },
 				ttlSeconds: authConfig.ttlSeconds,
 			}),
 		);
@@ -162,11 +163,12 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 			expiresAt: new Date(Date.now() + authConfig.ttlSeconds * 1000),
 		});
 
+		const account = await this.accountRepository.findById(session.accountId);
 		const { jsonWebToken } = await firstValueFrom(
 			this.tokenGrpcService.generateJwt({
 				sub: session.accountId,
 				aud: 'api-gateway',
-				extraClaims: { sid: newSession.id },
+				extraClaims: { sid: newSession.id, role: account?.role.name ?? 'user' },
 				ttlSeconds: authConfig.ttlSeconds,
 			}),
 		);
