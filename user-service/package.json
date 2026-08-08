@@ -54,6 +54,8 @@
 		"pg": "catalog:database",
 		"reflect-metadata": "catalog:runtime",
 		"rxjs": "catalog:runtime",
-		"@kirillasyamov/common": "catalog:common"
+		"@kirillasyamov/common": "catalog:common",
+		"@nestjs/bullmq": "catalog:queue",
+		"bullmq": "catalog:queue"
 	}
 }

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
-import { User } from '../prisma/generated/client';
+import { Prisma, User } from '../prisma/generated/client';
 import { UserRepository } from './user.repository';
 import {
 	CreateUserRequest,
@@ -14,6 +14,8 @@ import {
 	UpdateUserRequest,
 	UpdateUserResponse,
 	DeleteUserRequest,
+	TransferBalanceRequest,
+	TransferBalanceResponse,
 	UserProfileData,
 } from '@kirillasyamov/common/contracts/generated/user';
 
@@ -107,5 +109,34 @@ export class UserService {
 			}
 			throw error;
 		}
+	}
+
+	public async transferBalance(request: TransferBalanceRequest): Promise<TransferBalanceResponse> {
+		const amount = this.parseAmount(request.amount);
+		const sender = await this.userRepository.findByLogin(request.senderLogin);
+		if (!sender) throw new RpcException({ code: status.NOT_FOUND, message: 'Sender not found' });
+		const recipient = await this.userRepository.findByLogin(request.recipientLogin);
+		if (!recipient) throw new RpcException({ code: status.NOT_FOUND, message: 'Recipient not found' });
+		if (amount.greaterThan(sender.balance)) throw new RpcException({ code: status.FAILED_PRECONDITION, message: 'Insufficient funds' });
+
+		try {
+			await this.userRepository.transferBalance(sender.id, recipient.id, amount, request.idempotencyKey);
+		} catch (error) {
+			if (error instanceof Error) throw new RpcException({ code: status.FAILED_PRECONDITION, message: error.message });
+			throw error;
+		}
+		const updated = await this.userRepository.findByLogin(request.senderLogin);
+		return { updatedBalance: updated!.balance.toString() };
+	}
+
+	private parseAmount(value: string): Prisma.Decimal {
+		const decimal = new Prisma.Decimal(value);
+		if (!decimal.isFinite()) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'Invalid amount' });
+		return decimal;
+	}
+
+	public async resetBalance(): Promise<void> {
+		await this.userRepository.findAll(1, Number.MAX_SAFE_INTEGER);
+		// TODO
 	}
 }
