@@ -56,9 +56,9 @@ export class UserRepository {
 	public async transferBalance(fromId: string, toId: string, amount: Prisma.Decimal, idempotencyKey: string): Promise<void> {
 		try {
 			await this.prisma.$transaction(async tx => {
+				await tx.transfer.create({ data: { idempotencyKey, fromUserId: fromId, toUserId: toId, amount } });
 				await tx.user.update({ where: { id: fromId }, data: { balance: { decrement: amount } } });
 				await tx.user.update({ where: { id: toId }, data: { balance: { increment: amount } } });
-				await tx.transfer.create({ data: { idempotencyKey, fromUserId: fromId, toUserId: toId, amount } });
 			});
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return;
