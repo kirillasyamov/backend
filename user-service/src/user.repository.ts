@@ -65,4 +65,8 @@ export class UserRepository {
 			throw error;
 		}
 	}
+
+	public async resetBalances(): Promise<void> {
+		await this.prisma.user.updateMany({ where: { deletedAt: null }, data: { balance: 0 } });
+	}
 }

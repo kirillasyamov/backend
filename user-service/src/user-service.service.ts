@@ -18,13 +18,18 @@ import {
 	TransferBalanceResponse,
 	UserProfileData,
 } from '@kirillasyamov/common/contracts/generated/user';
+import type { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 
 @Injectable()
 export class UserService {
-	constructor(private readonly userRepository: UserRepository) {}
+	constructor(
+		private readonly userRepository: UserRepository,
+		@InjectQueue('balance-reset') private readonly balanceResetQueue: Queue,
+	) {}
 
 	private adaptToProfile(user: User): UserProfileData {
-		return { login: user.login, email: user.email, age: user.age, bio: user.bio, balance: user.balance.toString() };
+		return { login: user.login, email: user.email, age: user.age, bio: user.bio, balance: user.balance.toFixed(2) };
 	}
 
 	public async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
@@ -56,7 +61,7 @@ export class UserService {
 		const user = await this.userRepository.findByLogin(login);
 		if (!user) throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
 
-		return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio, balance: user.balance.toString() } };
+		return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio, balance: user.balance.toFixed(2) } };
 	}
 
 	public async getUsers(request: GetUsersRequest): Promise<GetUsersResponse> {
@@ -126,7 +131,8 @@ export class UserService {
 			throw error;
 		}
 		const updated = await this.userRepository.findByLogin(request.senderLogin);
-		return { updatedBalance: updated!.balance.toString() };
+		if (!updated) throw new RpcException({ code: status.NOT_FOUND, message: 'Sender not found' });
+		return { updatedBalance: updated.balance.toFixed(2) };
 	}
 
 	private parseAmount(value: string): Prisma.Decimal {
@@ -136,7 +142,6 @@ export class UserService {
 	}
 
 	public async resetBalance(): Promise<void> {
-		await this.userRepository.findAll(1, Number.MAX_SAFE_INTEGER);
-		// TODO
+		await this.balanceResetQueue.add('reset', {}, { jobId: 'balance-reset' });
 	}
 }
