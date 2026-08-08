@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
+import { User } from '../prisma/generated/client';
 import { UserRepository } from './user.repository';
 import {
 	CreateUserRequest,
@@ -13,20 +14,26 @@ import {
 	UpdateUserRequest,
 	UpdateUserResponse,
 	DeleteUserRequest,
+	UserProfileData,
 } from '@kirillasyamov/common/contracts/generated/user';
 
 @Injectable()
 export class UserService {
 	constructor(private readonly userRepository: UserRepository) {}
 
+	private adaptToProfile(user: User): UserProfileData {
+		return { login: user.login, email: user.email, age: user.age, bio: user.bio, balance: user.balance.toString() };
+	}
+
 	public async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
 		try {
-			const profile = request.userProfile;
-			if (!profile) {
-				throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'User profile is required' });
-			}
-			const user = await this.userRepository.reactivateOrCreate(profile);
-			return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio }, profileId: user.id };
+			const user = await this.userRepository.reactivateOrCreate({
+				login: request.login,
+				email: request.email,
+				age: request.age,
+				bio: request.bio,
+			});
+			return { userProfile: this.adaptToProfile(user), profileId: user.id };
 		} catch (error) {
 			if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
 				const target = (error.meta?.target as string[] | undefined) ?? [];
@@ -47,7 +54,7 @@ export class UserService {
 		const user = await this.userRepository.findByLogin(login);
 		if (!user) throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
 
-		return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio } };
+		return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio, balance: user.balance.toString() } };
 	}
 
 	public async getUsers(request: GetUsersRequest): Promise<GetUsersResponse> {
@@ -55,7 +62,7 @@ export class UserService {
 		const limit = request.limit || 10;
 		const { users, total } = await this.userRepository.findAll(page, limit);
 		return {
-			users: users.map(u => ({ login: u.login, email: u.email, age: u.age, bio: u.bio })),
+			users: users.map(u => this.adaptToProfile(u)),
 			total,
 			page,
 			limit,
@@ -73,7 +80,7 @@ export class UserService {
 			bio: request.bio,
 		});
 
-		return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio } };
+		return { userProfile: this.adaptToProfile(user) };
 	}
 
 	public async deleteUser(request: DeleteUserRequest): Promise<void> {
