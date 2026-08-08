@@ -11,3 +11,5 @@ export * from './prisma.scheme';
 export * from './redis.config';
 export * from './redis.scheme';
 export * from './swagger.config';
+export * from './queue.config';
+export * from './queue.scheme';
