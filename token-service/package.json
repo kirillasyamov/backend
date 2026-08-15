@@ -5,10 +5,10 @@
 	"main": "index.js",
 	"scripts": {
 		"build": "tsc -b",
-		"start": "node --import tsx dist/main.js",
-		"start:dev": "cross-env PORT=3004 tsx watch src/main.ts",
-		"start:debug": "cross-env PORT=3004 tsx watch --inspect src/main.ts",
-		"start:prod": "node --import tsx dist/main.js",
+		"start": "node --import @swc-node/register/esm-register --enable-source-maps dist/main.js",
+		"start:dev": "cross-env PORT=3004 node --watch --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
+		"start:debug": "cross-env PORT=3004 node --watch --inspect --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
+		"start:prod": "node --import @swc-node/register/esm-register --enable-source-maps dist/main.js",
 		"lint": "eslint \"src/**/*.ts\"",
 		"lint:fix": "eslint \"src/**/*.ts\" --fix",
 		"format": "prettier --write \"src/**/*.ts\"",
@@ -19,13 +19,13 @@
 	"license": "ISC",
 	"type": "module",
 	"devDependencies": {
+		"@swc/core": "catalog:development",
+		"@swc-node/register": "catalog:development",
 		"@types/node": "catalog:development",
 		"cross-env": "catalog:development",
 		"eslint": "catalog:development",
 		"eslint-config-prettier": "catalog:development",
 		"prettier": "catalog:development",
-		"tsconfig-paths": "catalog:development",
-		"tsx": "catalog:development",
 		"typescript": "catalog:development",
 		"typescript-eslint": "catalog:development"
 	},
@@ -39,6 +39,9 @@
 		"class-transformer": "catalog:validation",
 		"class-validator": "catalog:validation",
 		"reflect-metadata": "catalog:runtime",
-		"rxjs": "catalog:runtime"
+		"rxjs": "catalog:runtime",
+		"grpc-health-check": "catalog:grpc",
+		"jose": "catalog:auth",
+		"ioredis": "catalog:database"
 	}
 }

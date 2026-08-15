@@ -3,4 +3,32 @@ syntax = "proto3";
 package token.v1;
 
 import "google/protobuf/empty.proto";
-import "google/protobuf/timestamp.proto";
+
+service TokenService {
+	rpc GenerateJWT (GenerateJWTRequest) returns (GenerateJWTResponse);
+	rpc ValidateJWT (ValidateJWTRequest) returns (ValidateJWTResponse);
+	rpc InvalidateJWT (InvalidateJWTRequest) returns (google.protobuf.Empty);
+}
+
+message GenerateJWTRequest {
+	string sub = 1;
+	string aud = 2;
+	map<string, string> extraClaims = 3;
+	uint32 ttlSeconds = 4;
+}
+
+message GenerateJWTResponse {
+	string jsonWebToken = 1;
+}
+
+message ValidateJWTRequest {
+  string jsonWebToken = 1;
+}
+
+message ValidateJWTResponse {
+	bool isValid = 1;
+}
+
+message InvalidateJWTRequest {
+  	string jsonWebToken = 1;
+}

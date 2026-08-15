@@ -5,9 +5,11 @@
 		"rootDir": "src",
 		"composite": true,
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"common/*": ["../common/*"]
 		},
 		"tsBuildInfoFile": "./dist/.tsbuildinfo"
 	},
-	"include": ["src/**/*"]
+	"include": ["src/**/*"],
+	"references": [{ "path": "../common" }]
 }

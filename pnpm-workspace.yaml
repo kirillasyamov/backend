@@ -1,12 +1,17 @@
 allowBuilds:
-    esbuild: true
+    '@swc/core': true
+    '@prisma/client': true
+    '@prisma/engines': true
+    '@scarf/scarf': false
+    prisma: true
     protobufjs: true
-shellEmulator: true
-engineStrict: true
-catalogMode: prefer
+    shellEmulator: true
+    engineStrict: true
+    catalogMode: prefer
 
 packages:
     - 'common'
+    - 'database'
     - 'api-gateway'
     - 'auth-service'
     - 'user-service'
@@ -14,30 +19,47 @@ packages:
 
 catalogs:
     development:
+        '@swc/core': ^1.15.0
+        '@swc-node/register': ^1.12.0
         '@types/node': ^26.0.1
+        '@types/pg': ^8.11.0
         cross-env: ^10.1.0
         eslint: ^10.6.0
         eslint-config-prettier: ^10.1.8
         prettier: ^3.9.0
         protoc: ^35.1.0
-        ts-node: ^10.9.2
         ts-proto: ^2.11.8
-        tsconfig-paths: ^4.2.0
-        tsx: ^4.23.0
         typescript: ^6.0.3
         typescript-eslint: ^8.62.0
     grpc:
         '@grpc/grpc-js': ^1.14.4
         '@grpc/proto-loader': ^0.8.1
+        'grpc-health-check': ^2.1.0
     nest:
         '@nestjs/common': ^11.1.27
         '@nestjs/config': ^4.0.4
         '@nestjs/core': ^11.1.27
         '@nestjs/microservices': ^11.1.27
         '@nestjs/platform-fastify': ^11.1.27
+        '@nestjs/swagger': ^11.4.6
+        '@fastify/swagger': ^9.8.0
+        '@fastify/swagger-ui': ^6.1.0
+        '@nestjs/throttler': ^6.5.0
     runtime:
         reflect-metadata: ^0.2.2
         rxjs: ^7.8.2
     validation:
         class-transformer: ^0.5.1
         class-validator: ^0.15.1
+        joi: ^17.13.3
+    database:
+        prisma: ^7.0.0
+        '@prisma/client': ^7.0.0
+        '@prisma/adapter-pg': ^7.0.0
+        pg: ^8.13.0
+        ioredis: ^5.6.1
+    config:
+        dotenv: ^16.4.7
+    auth:
+        '@node-rs/argon2': '^2.0.2'
+        jose: ^6.0.12

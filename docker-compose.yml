@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+    postgres:
+        image: postgres:15.3
+        container_name: postgres
+        restart: always
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        ports:
+            - '5432:5432'
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        networks:
+            - backend
+    redis:
+        image: redis:7-alpine
+        container_name: redis
+        restart: always
+        command: redis-server --appendonly yes
+        ports:
+            - '6379:6379'
+        volumes:
+            - redis_data:/data
+        networks:
+            - backend
+
+volumes:
+    postgres_data:
+    redis_data:
+
+networks:
+    backend:

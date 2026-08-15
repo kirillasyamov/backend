@@ -2,5 +2,131 @@ syntax = "proto3";
 
 package auth.v1;
 
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service AuthService {
+	rpc CreateAccount (CreateAccountRequest) returns (CreateAccountResponse);
+	rpc DeleteAccount (DeleteAccountRequest) returns (google.protobuf.Empty);
+
+	rpc ChangePassword (ChangePasswordRequest) returns (google.protobuf.Empty);
+	rpc ChangeEmail (ChangeEmailRequest) returns (google.protobuf.Empty);
+
+	rpc CreateSession (CreateSessionRequest) returns (CreateSessionResponse);
+	rpc RevokeSession (RevokeSessionRequest) returns (google.protobuf.Empty);
+	rpc RefreshSession (RefreshSessionRequest) returns (RefreshSessionResponse);
+	rpc GetSessions (GetSessionsRequest) returns (GetSessionsResponse);
+
+	rpc GetAccountByLogin (GetAccountByLoginRequest) returns (GetAccountByLoginResponse);
+	rpc GetAccountByEmail (GetAccountByEmailRequest) returns (GetAccountByEmailResponse);
+	rpc GetAccountById (GetAccountByIdRequest) returns (GetAccountByIdResponse);
+}
+
+message CreateAccountRequest {
+	string login = 1;
+	string email = 2;
+	string password = 3;
+}
+
+message CreateAccountResponse {
+	string accountId = 1;
+	string login = 2;
+	string email = 3;
+	uint32 roleId = 4;
+}
+
+message DeleteAccountRequest {
+  	optional string id = 1;
+}
+
+message ChangePasswordRequest {
+	string accountId = 1;
+	string oldPassword = 2;
+	string newPassword = 3;
+}
+
+message ChangeEmailRequest {
+	string accountId = 1;
+	string newEmail = 2;
+}
+
+message CreateSessionRequest {
+	string accountId = 1;
+	uint32 roleId = 2;
+	string password = 3;
+	string device = 4;
+	google.protobuf.Timestamp expiresAt = 5;
+	google.protobuf.Timestamp createdAt = 6;
+}
+
+message TokenPair {
+	string accessToken = 1;
+	string refreshToken = 2;
+}
+
+message CreateSessionResponse {
+	TokenPair tokens = 1;
+	google.protobuf.Timestamp expiresAt = 2;
+	google.protobuf.Timestamp createdAt = 3;
+}
+
+message GetSessionsRequest {
+	optional string accountId = 1;
+}
+
+message SessionData {
+	string id = 1;
+	string device = 2;
+	google.protobuf.Timestamp expiresAt = 3;
+	google.protobuf.Timestamp createdAt = 4;
+}
+
+message GetSessionsResponse {
+	repeated SessionData sessions = 1;
+}
+
+message RefreshSessionRequest {
+  string refreshToken = 1;
+}
+
+message RefreshSessionResponse {
+	TokenPair tokens = 1;
+}
+
+message RevokeSessionRequest {
+	string sessionId = 1;
+}
+
+message GetAccountByLoginRequest {
+  string login = 1;
+}
+
+message GetAccountByLoginResponse {
+  string accountId = 1;
+  string login = 2;
+  string email = 3;
+  uint32 roleId = 4;
+}
+
+message GetAccountByEmailRequest {
+  string email = 1;
+}
+
+message GetAccountByEmailResponse {
+  string accountId = 1;
+  string login = 2;
+  string email = 3;
+  uint32 roleId = 4;
+}
+
+message GetAccountByIdRequest {
+  string id = 1;
+}
+
+message GetAccountByIdResponse {
+  string accountId = 1;
+  string login = 2;
+  string email = 3;
+  uint32 roleId = 4;
+}
+

@@ -1,0 +1,37 @@
+{
+	"name": "common",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"exports": {
+		"./*": {
+			"types": "./dist/*.d.ts",
+			"default": "./*"
+		}
+	},
+	"keywords": [],
+	"author": "kirillasyamov",
+	"license": "ISC",
+	"type": "module",
+	"dependencies": {
+		"@grpc/grpc-js": "catalog:grpc",
+		"@grpc/proto-loader": "catalog:grpc",
+		"@nestjs/common": "catalog:nest",
+		"@nestjs/config": "catalog:nest",
+		"@nestjs/core": "catalog:nest",
+		"@nestjs/microservices": "catalog:nest",
+		"@prisma/client": "catalog:database",
+		"class-transformer": "catalog:validation",
+		"class-validator": "catalog:validation",
+		"reflect-metadata": "catalog:runtime",
+		"rxjs": "catalog:runtime",
+		"joi": "catalog:validation",
+		"@nestjs/swagger": "catalog:nest",
+		"ioredis": "catalog:database"
+	},
+	"devDependencies": {
+		"@types/node": "catalog:development",
+		"prisma": "catalog:database",
+		"typescript": "catalog:development"
+	}
+}

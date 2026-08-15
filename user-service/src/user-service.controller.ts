@@ -1,12 +1,48 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
+import { RpcException } from '@nestjs/microservices';
+import { status } from '@grpc/grpc-js';
 import { UserService } from './user-service.service';
+import type {
+	CreateUserRequest,
+	CreateUserResponse,
+	GetUserRequest,
+	GetUserResponse,
+	GetUsersRequest,
+	GetUsersResponse,
+	UpdateUserRequest,
+	UpdateUserResponse,
+	DeleteUserRequest,
+} from 'common/contracts/generated/user';
+import { UserServiceControllerMethods } from 'common/contracts/generated/user';
 
 @Controller()
-export class UserServiceController {
-  constructor(private readonly userService: UserService) {}
+@UserServiceControllerMethods()
+export class UserController {
+	constructor(private readonly userService: UserService) {}
 
-  @Get()
-  getHello(): string {
-    return this.userService.getHello();
-  }
+	@GrpcMethod('Health', 'Check')
+	public async check(): Promise<{ status: number }> {
+		return { status: 1 };
+	}
+
+	public async createUser(data: CreateUserRequest): Promise<CreateUserResponse> {
+		return this.userService.createUser(data);
+	}
+
+	public async getUser(data: GetUserRequest): Promise<GetUserResponse> {
+		return this.userService.getUser(data);
+	}
+
+	public async getUsers(data: GetUsersRequest): Promise<GetUsersResponse> {
+		return this.userService.getUsers(data);
+	}
+
+	public async updateUser(data: UpdateUserRequest): Promise<UpdateUserResponse> {
+		return this.userService.updateUser(data);
+	}
+
+	public async deleteUser(data: DeleteUserRequest): Promise<void> {
+		return this.userService.deleteUser(data);
+	}
 }
