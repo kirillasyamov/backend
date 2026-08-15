@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PRISMA_CLIENT } from '@kirillasyamov/common';
-import { type PrismaClient, Account, Role } from '../prisma/generated/client';
+import { type PrismaClient, Account, Role } from '../../prisma/generated/client';
 
 export interface RegistrationData {
 	email: string;

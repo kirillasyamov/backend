@@ -3,10 +3,11 @@ import { mockDeep } from 'vitest-mock-extended';
 import { status } from '@grpc/grpc-js';
 import { of } from 'rxjs';
 import { AuthService } from './auth-service.service';
-import { AccountRepository } from './account.repository';
-import { SessionRepository } from './session.repository';
-import { RoleRepository } from './role.repository';
+import { AccountRepository } from './repositories/account.repository';
+import { SessionRepository } from './repositories/session.repository';
+import { RoleRepository } from './repositories/role.repository';
 import type { TokenServiceClient } from '@kirillasyamov/common/contracts/generated/token';
+import { verify } from '@node-rs/argon2';
 
 vi.mock('@node-rs/argon2', () => ({ hash: vi.fn().mockResolvedValue('hashed-pw'), verify: vi.fn() }));
 
@@ -40,6 +41,35 @@ describe('AuthService', () => {
 
 		expect(accountRepository.create).toHaveBeenCalledOnce();
 		expect(result).toEqual({ accountId: 'acc-1', login: 'alice', email: 'a@b.com', roleId: 1 });
+	});
+
+	it('createSession returns actual session timestamps', async () => {
+		const expiresAt = new Date('2030-01-01T00:00:00Z');
+		const createdAt = new Date('2026-01-01T00:00:00Z');
+
+		accountRepository.findById.mockResolvedValue({ id: 'acc-1', passwordHash: 'hashed-pw', role: { name: 'user' } } as never);
+		sessionRepository.create.mockResolvedValue({
+			id: 'session-1',
+			accountId: 'acc-1',
+			deviceIdentifier: 'device',
+			refreshToken: 'refresh-token',
+			expiresAt,
+			createdAt,
+		});
+		tokenService.generateJwt.mockReturnValue(of({ jsonWebToken: 'access-token' }));
+		vi.mocked(verify).mockResolvedValue(true);
+
+		const result = await service.createSession({
+			accountId: 'acc-1',
+			roleId: 1,
+			password: 'pw',
+			device: 'device',
+			expiresAt: undefined,
+			createdAt: undefined,
+		});
+
+		expect(result.expiresAt).toEqual({ seconds: Math.floor(expiresAt.getTime() / 1000), nanos: 0 });
+		expect(result.createdAt).toEqual({ seconds: Math.floor(createdAt.getTime() / 1000), nanos: 0 });
 	});
 
 	it('getAccountByLogin throws NOT_FOUND when account missing', async () => {

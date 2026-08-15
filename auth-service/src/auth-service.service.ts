@@ -4,10 +4,10 @@ import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
-import { AccountRepository } from './account.repository';
-import { SessionRepository } from './session.repository';
-import { RoleRepository } from './role.repository';
-const DEFAULT_ROLE_ID = 1;
+import { AccountRepository } from './repositories/account.repository';
+import { SessionRepository } from './repositories/session.repository';
+import { RoleRepository } from './repositories/role.repository';
+import { DEFAULT_ROLE_ID, JWT_AUDIENCE, DEFAULT_ROLE_NAME, REFRESH_TOKEN_BYTES } from './auth-service.constants';
 import type {
 	AuthServiceController,
 	CreateAccountRequest,
@@ -33,6 +33,7 @@ import type { TokenServiceClient } from '@kirillasyamov/common/contracts/generat
 import { hash, verify } from '@node-rs/argon2';
 import { randomBytes } from 'crypto';
 import { authConfig } from '@kirillasyamov/common/configs';
+import { toTimestamp } from '@kirillasyamov/common/utils';
 
 @Injectable()
 export class AuthService implements AuthServiceController, OnModuleInit {
@@ -118,14 +119,14 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 		const session = await this.sessionRepository.create({
 			accountId: request.accountId,
 			deviceIdentifier: request.device,
-			refreshToken: randomBytes(48).toString('base64'),
+			refreshToken: randomBytes(REFRESH_TOKEN_BYTES).toString('base64'),
 			expiresAt: new Date(Date.now() + authConfig.ttlSeconds * 1000),
 		});
 
 		const { jsonWebToken } = await firstValueFrom(
 			this.tokenGrpcService.generateJwt({
 				sub: request.accountId,
-				aud: 'api-gateway',
+				aud: JWT_AUDIENCE,
 				extraClaims: { sid: session.id, role: account.role.name },
 				ttlSeconds: authConfig.ttlSeconds,
 			}),
@@ -133,8 +134,8 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 
 		return {
 			tokens: { accessToken: jsonWebToken, refreshToken: session.refreshToken },
-			expiresAt: request.expiresAt,
-			createdAt: request.createdAt,
+			expiresAt: toTimestamp(session.expiresAt),
+			createdAt: toTimestamp(session.createdAt),
 		};
 	}
 
@@ -143,7 +144,7 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 	}
 
 	public async refreshSession(request: RefreshSessionRequest): Promise<RefreshSessionResponse> {
-		const newRefreshToken = randomBytes(48).toString('base64');
+		const newRefreshToken = randomBytes(REFRESH_TOKEN_BYTES).toString('base64');
 
 		const session = await this.sessionRepository.rotate(request.refreshToken, {
 			refreshToken: newRefreshToken,
@@ -161,8 +162,8 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 		const { jsonWebToken } = await firstValueFrom(
 			this.tokenGrpcService.generateJwt({
 				sub: session.accountId,
-				aud: 'api-gateway',
-				extraClaims: { sid: session.id, role: account?.role.name ?? 'user' },
+				aud: JWT_AUDIENCE,
+				extraClaims: { sid: session.id, role: account?.role.name ?? DEFAULT_ROLE_NAME },
 				ttlSeconds: authConfig.ttlSeconds,
 			}),
 		);
@@ -231,8 +232,8 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 			sessions: sessions.map(s => ({
 				id: s.id,
 				device: s.deviceIdentifier,
-				expiresAt: { seconds: Math.floor(s.expiresAt.getTime() / 1000), nanos: 0 },
-				createdAt: { seconds: Math.floor(s.createdAt.getTime() / 1000), nanos: 0 },
+				expiresAt: toTimestamp(s.expiresAt),
+				createdAt: toTimestamp(s.createdAt),
 			})),
 		};
 	}
