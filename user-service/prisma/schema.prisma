@@ -1,47 +1,9 @@
 generator client {
-  	provider = "prisma-client"
-  	output = "generated"
-  	moduleFormat = "esm"
+	provider = "prisma-client"
+	output = "generated"
+	moduleFormat = "esm"
 }
 
 datasource db {
-  	provider = "postgresql"
+	provider = "postgresql"
 }
-
-model User {
-	id String @id @default(nanoid())
-
-	login String @unique @db.VarChar(100)
-	email String @unique
-
-	age Int @db.SmallInt
-	bio String @db.VarChar(1000)
-	balance Decimal @default(0) @db.Decimal(18, 2)
-
-	transfersFrom Transfer[] @relation("TransferFrom")
-	transfersTo Transfer[] @relation("TransferTo")
-
-	createdAt DateTime @default(now())
-	updatedAt DateTime @updatedAt
-	deletedAt DateTime?
-
-	@@map("user")
-}
-
-model Transfer {
-	id             String @id @default(nanoid())
-	idempotencyKey String? @unique
-
-	fromUserId     String
-	toUserId       String
-	amount         Decimal @db.Decimal(18, 2)
-
-	fromUser       User @relation("TransferFrom", fields: [fromUserId], references: [id], onDelete: Restrict)
-	toUser         User @relation("TransferTo", fields: [toUserId], references: [id], onDelete: Restrict)
-	createdAt      DateTime @default(now())
-
-	@@index([fromUserId])
-	@@index([toUserId])
-	@@map("transfer")
-}
-
