@@ -1,6 +1,6 @@
 {
 	"name": "@kirillasyamov/common",
-	"version": "3.0.10",
+	"version": "3.0.11",
 	"description": "Shared contracts, configs, modules and filters for the application",
 	"type": "module",
 	"main": "./dist/index.js",
@@ -23,6 +23,10 @@
 		"./filters": {
 			"types": "./dist/filters/index.d.ts",
 			"default": "./dist/filters/index.js"
+		},
+		"./utils": {
+			"types": "./dist/utils/index.d.ts",
+			"default": "./dist/utils/index.js"
 		},
 		"./modules/*": {
 			"types": "./dist/modules/*.d.ts",

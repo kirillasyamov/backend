@@ -5,6 +5,7 @@ export default defineConfig({
 		'index.ts',
 		'configs/index.ts',
 		'filters/index.ts',
+		'utils/index.ts',
 		'enums/index.ts',
 		'modules/config/index.ts',
 		'modules/prisma/index.ts',
