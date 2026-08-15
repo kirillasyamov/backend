@@ -18,6 +18,22 @@ export class SessionRepository {
 		return this.prisma.session.findUnique({ where: { refreshToken } });
 	}
 
+	public async rotate(oldRefreshToken: string, data: { refreshToken: string; expiresAt: Date }): Promise<Session | null> {
+		const result = await this.prisma.session.updateMany({
+			where: { refreshToken: oldRefreshToken, expiresAt: { gt: new Date() } },
+			data,
+		});
+		if (result.count === 0) return null;
+		return this.prisma.session.findUnique({ where: { refreshToken: data.refreshToken } });
+	}
+
+	public async deleteExpiredTokens(refreshToken: string): Promise<number> {
+		const result = await this.prisma.session.deleteMany({
+			where: { refreshToken, expiresAt: { lt: new Date() } },
+		});
+		return result.count;
+	}
+
 	public async findManyByAccountId(accountId: string): Promise<Session[]> {
 		return this.prisma.session.findMany({ where: { accountId } });
 	}

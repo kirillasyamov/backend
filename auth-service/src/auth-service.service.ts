@@ -143,37 +143,31 @@ export class AuthService implements AuthServiceController, OnModuleInit {
 	}
 
 	public async refreshSession(request: RefreshSessionRequest): Promise<RefreshSessionResponse> {
-		const session = await this.sessionRepository.findByRefreshToken(request.refreshToken);
-		if (!session) {
-			throw new RpcException({ code: status.UNAUTHENTICATED, message: 'Invalid refresh token' });
-		}
-
-		if (new Date() > session.expiresAt) {
-			await this.sessionRepository.delete(session.id);
-			throw new RpcException({ code: status.UNAUTHENTICATED, message: 'Refresh token expired' });
-		}
-
 		const newRefreshToken = randomBytes(48).toString('base64');
 
-		await this.sessionRepository.delete(session.id);
-		const newSession = await this.sessionRepository.create({
-			accountId: session.accountId,
-			deviceIdentifier: session.deviceIdentifier,
+		const session = await this.sessionRepository.rotate(request.refreshToken, {
 			refreshToken: newRefreshToken,
 			expiresAt: new Date(Date.now() + authConfig.ttlSeconds * 1000),
 		});
+		if (!session) {
+			const expired = await this.sessionRepository.deleteExpiredTokens(request.refreshToken);
+			throw new RpcException({
+				code: status.UNAUTHENTICATED,
+				message: expired > 0 ? 'Refresh token expired' : 'Invalid refresh token',
+			});
+		}
 
 		const account = await this.accountRepository.findById(session.accountId);
 		const { jsonWebToken } = await firstValueFrom(
 			this.tokenGrpcService.generateJwt({
 				sub: session.accountId,
 				aud: 'api-gateway',
-				extraClaims: { sid: newSession.id, role: account?.role.name ?? 'user' },
+				extraClaims: { sid: session.id, role: account?.role.name ?? 'user' },
 				ttlSeconds: authConfig.ttlSeconds,
 			}),
 		);
 
-		return { tokens: { accessToken: jsonWebToken, refreshToken: newSession.refreshToken } };
+		return { tokens: { accessToken: jsonWebToken, refreshToken: session.refreshToken } };
 	}
 
 	public async getAccountByLogin(request: GetAccountByLoginRequest): Promise<GetAccountByLoginResponse> {
