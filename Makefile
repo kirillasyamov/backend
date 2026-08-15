@@ -1,7 +1,14 @@
+all: build gen
 
 NPM_PUBLISH_TOKEN := $(shell node --env-file=.env -e "console.log(process.env.NPM_PUBLISH_TOKEN)")
 DOCKER_PUBLISH_TOKEN := $(shell node --env-file=.env -e "console.log(process.env.DOCKER_HUB_PUBLISH_TOKEN)")
 COMMON_PACKAGE_VERSION := $(shell node -p "require('./common/package.json').version")
+
+ifeq ($(OS),Windows_NT)
+	MK_PRISMA_DIR_COMMAND := if not exist "common\contracts\generated" mkdir "common\contracts\generated"
+else
+	MK_PRISMA_DIR_COMMAND := mkdir -p ./common/contracts/generated
+endif
 
 update-common-package-version:
 	node -p "require('./common/package.json').version"
@@ -20,7 +27,7 @@ start:
 gen:
 	cd auth-service && pnpm prisma generate
 	cd user-service && pnpm prisma generate
-	mkdir -p ./common/contracts/generated
+	$(MK_PRISMA_DIR_COMMAND)
 	pnpm gen
 
 migrate-auth:
@@ -46,7 +53,7 @@ format:
 	pnpm format
 
 publish-common:
-	if not exist "common\contracts\generated" mkdir "common\contracts\generated"
+	$(MK_PRISMA_DIR_COMMAND)
 	pnpm gen
 	pnpm --filter @kirillasyamov/common build
 	cd common && pnpm publish --no-git-checks --//registry.npmjs.org/:_authToken="$(NPM_PUBLISH_TOKEN)"
