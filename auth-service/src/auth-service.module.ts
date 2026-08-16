@@ -8,7 +8,7 @@ import { RoleRepository } from './repositories/role.repository';
 import { tokenProtoPath, healthProtoPath } from '@kirillasyamov/common';
 import { PrismaModule, ConfigModule } from '@kirillasyamov/common';
 import { prismaConfig, prismaSchema, grpcSchema, grpcServiceConfig } from '@kirillasyamov/common/configs';
-import { PrismaClient } from '../prisma/generated/client';
+import { PrismaClient } from '@prismagen/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 @Module({

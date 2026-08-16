@@ -6,7 +6,8 @@
 		"composite": true,
 		"types": ["node", "vitest/globals"],
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@prismagen/*": ["./prisma/generated/*"]
 		},
 		"tsBuildInfoFile": "./dist/.tsbuildinfo"
 	},

@@ -9,7 +9,7 @@ import { SessionRepository } from './repositories/session.repository';
 import { RoleRepository } from './repositories/role.repository';
 import { DEFAULT_ROLE_ID, JWT_AUDIENCE, DEFAULT_ROLE_NAME, REFRESH_TOKEN_BYTES } from './auth-service.constants';
 import type {
-	AuthServiceController,
+	AuthServiceController as AuthServiceControllerInterface,
 	CreateAccountRequest,
 	CreateAccountResponse,
 	DeleteAccountRequest,
@@ -36,7 +36,7 @@ import { authConfig } from '@kirillasyamov/common/configs';
 import { toTimestamp } from '@kirillasyamov/common/utils';
 
 @Injectable()
-export class AuthService implements AuthServiceController, OnModuleInit {
+export class AuthService implements AuthServiceControllerInterface, OnModuleInit {
 	private tokenGrpcService!: TokenServiceClient;
 
 	constructor(
