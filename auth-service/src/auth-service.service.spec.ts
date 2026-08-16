@@ -3,11 +3,10 @@ import { mockDeep } from 'vitest-mock-extended';
 import { status } from '@grpc/grpc-js';
 import { of } from 'rxjs';
 import { AuthService } from './auth-service.service';
-import { AccountRepository } from './repositories/account.repository';
-import { SessionRepository } from './repositories/session.repository';
-import { RoleRepository } from './repositories/role.repository';
+import { AccountRepository, SessionRepository, RoleRepository } from './repositories';
 import type { TokenServiceClient } from '@kirillasyamov/common/contracts/generated/token';
 import { verify } from '@node-rs/argon2';
+import { TOKEN_PACKAGE } from './auth-service.constants';
 
 vi.mock('@node-rs/argon2', () => ({ hash: vi.fn().mockResolvedValue('hashed-pw'), verify: vi.fn() }));
 
@@ -27,7 +26,7 @@ describe('AuthService', () => {
 				{ provide: AccountRepository, useValue: accountRepository },
 				{ provide: SessionRepository, useValue: sessionRepository },
 				{ provide: RoleRepository, useValue: mockDeep<RoleRepository>() },
-				{ provide: 'TOKEN_PACKAGE', useValue: { getService: () => tokenService } },
+				{ provide: TOKEN_PACKAGE, useValue: { getService: () => tokenService } },
 			],
 		}).compile();
 		service = moduleRef.get(AuthService);

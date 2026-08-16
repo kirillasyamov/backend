@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PRISMA_CLIENT } from '@kirillasyamov/common';
 import { type PrismaClient, Account } from '@prismagen/client';
-import type { IRegistrationData, IAccountWithRole } from '../interfaces/account.interface';
+import type { IRegistrationData, IAccountWithRole } from '../interfaces';
 
 @Injectable()
 export class AccountRepository {

@@ -4,10 +4,8 @@ import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
-import { AccountRepository } from './repositories/account.repository';
-import { SessionRepository } from './repositories/session.repository';
-import { RoleRepository } from './repositories/role.repository';
-import { DEFAULT_ROLE_ID, JWT_AUDIENCE, DEFAULT_ROLE_NAME, REFRESH_TOKEN_BYTES } from './auth-service.constants';
+import { AccountRepository, SessionRepository, RoleRepository } from './repositories';
+import { DEFAULT_ROLE_ID, JWT_AUDIENCE, DEFAULT_ROLE_NAME, REFRESH_TOKEN_BYTES, TOKEN_PACKAGE } from './auth-service.constants';
 import type {
 	AuthServiceController as AuthServiceControllerInterface,
 	CreateAccountRequest,
@@ -43,7 +41,7 @@ export class AuthService implements AuthServiceControllerInterface, OnModuleInit
 		@Inject(AccountRepository) private readonly accountRepository: AccountRepository,
 		@Inject(SessionRepository) private readonly sessionRepository: SessionRepository,
 		@Inject(RoleRepository) private readonly roleRepository: RoleRepository,
-		@Inject('TOKEN_PACKAGE') private readonly tokenClient: ClientGrpc,
+		@Inject(TOKEN_PACKAGE) private readonly tokenClient: ClientGrpc,
 	) {}
 
 	onModuleInit() {
