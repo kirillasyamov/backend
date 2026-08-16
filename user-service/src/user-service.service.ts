@@ -2,9 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
-import { Prisma, User } from '../prisma/generated/client';
-import { UserRepository } from './user.repository';
+import { Prisma, User } from '@prismagen/client';
+import { UserRepository } from './repositories/user.repository';
+import { BALANCE_RESET_QUEUE, BALANCE_RESET_JOB, DEFAULT_PAGE, DEFAULT_LIMIT } from './user-service.constants';
 import {
+	UserServiceController as UserServiceControllerInterface,
 	CreateUserRequest,
 	CreateUserResponse,
 	GetUserRequest,
@@ -24,11 +26,11 @@ import { Interval, SchedulerRegistry } from '@nestjs/schedule';
 import { queueConfig } from '@kirillasyamov/common/configs';
 
 @Injectable()
-export class UserService {
+export class UserService implements UserServiceControllerInterface {
 	private readonly logger = new Logger(UserService.name);
 	constructor(
 		private readonly userRepository: UserRepository,
-		@InjectQueue('balance-reset') private readonly balanceResetQueue: Queue,
+		@InjectQueue(BALANCE_RESET_QUEUE) private readonly balanceResetQueue: Queue,
 		private readonly schedulerRegistry: SchedulerRegistry,
 	) {}
 
@@ -69,8 +71,8 @@ export class UserService {
 	}
 
 	public async getUsers(request: GetUsersRequest): Promise<GetUsersResponse> {
-		const page = request.page || 1;
-		const limit = request.limit || 10;
+		const page = request.page || DEFAULT_PAGE;
+		const limit = request.limit || DEFAULT_LIMIT;
 		const { users, total } = await this.userRepository.findAll(page, limit);
 		return {
 			users: users.map(u => this.adaptToProfile(u)),
@@ -145,19 +147,19 @@ export class UserService {
 		return decimal;
 	}
 
-	@Interval('balance-reset', queueConfig.resetIntervalMs)
+	@Interval(BALANCE_RESET_QUEUE, queueConfig.resetIntervalMs)
 	public async enqueueScheduledReset(): Promise<void> {
 		this.logger.log(`Enqueueing balance reset job (every ${String(queueConfig.resetIntervalMs / 1000)}s)`);
-		const job = await this.balanceResetQueue.add('reset', {}, { jobId: 'balance-reset' });
+		const job = await this.balanceResetQueue.add(BALANCE_RESET_JOB, {}, { jobId: BALANCE_RESET_QUEUE });
 		this.logger.log(`Balance reset job enqueued: ${job.id ?? 'unknown'}`);
 	}
 
 	public async resetBalance(): Promise<void> {
 		this.logger.log('Manual balance reset triggered');
 		await this.enqueueScheduledReset();
-		this.schedulerRegistry.deleteInterval('balance-reset');
+		this.schedulerRegistry.deleteInterval(BALANCE_RESET_QUEUE);
 		this.schedulerRegistry.addInterval(
-			'balance-reset',
+			BALANCE_RESET_QUEUE,
 			setInterval(() => void this.enqueueScheduledReset(), queueConfig.resetIntervalMs),
 		);
 		this.logger.log(`Balance reset restarted (every ${String(queueConfig.resetIntervalMs / 1000)}s)`);

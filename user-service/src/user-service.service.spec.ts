@@ -2,7 +2,8 @@ import { Test } from '@nestjs/testing';
 import { mockDeep } from 'vitest-mock-extended';
 import { status } from '@grpc/grpc-js';
 import { UserService } from './user-service.service';
-import { UserRepository } from './user.repository';
+import { UserRepository } from './repositories/user.repository';
+import { BALANCE_RESET_QUEUE } from './user-service.constants';
 import { vi } from 'vitest';
 import { getQueueToken } from '@nestjs/bullmq';
 import { SchedulerRegistry } from '@nestjs/schedule/dist/scheduler.registry';
@@ -18,7 +19,7 @@ describe('UserService', () => {
 				UserService,
 				{ provide: UserRepository, useValue: userRepository },
 				{ provide: SchedulerRegistry, useValue: { deleteInterval: vi.fn(), addInterval: vi.fn() } },
-				{ provide: getQueueToken('balance-reset'), useValue: { add: vi.fn().mockResolvedValue(undefined) } },
+				{ provide: getQueueToken(BALANCE_RESET_QUEUE), useValue: { add: vi.fn().mockResolvedValue(undefined) } },
 			],
 		}).compile();
 		service = moduleRef.get(UserService);

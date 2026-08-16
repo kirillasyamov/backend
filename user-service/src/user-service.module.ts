@@ -1,23 +1,24 @@
 import { Module } from '@nestjs/common';
 import { UserController } from './user-service.controller';
 import { UserService } from './user-service.service';
-import { UserRepository } from './user.repository';
+import { UserRepository } from './repositories/user.repository';
+import { BALANCE_RESET_QUEUE, BALANCE_RESET_JOB } from './user-service.constants';
 import { PrismaModule, ConfigModule } from '@kirillasyamov/common';
-import { PrismaClient } from '../prisma/generated/client';
+import { PrismaClient } from '@prismagen/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { prismaConfig, prismaSchema, grpcSchema, redisSchema, redisConfig, queueSchema } from '@kirillasyamov/common/configs';
 import type { Job } from 'bullmq';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BullModule, WorkerHost, Processor } from '@nestjs/bullmq';
 
-@Processor('balance-reset')
+@Processor(BALANCE_RESET_QUEUE)
 class BalanceProcessor extends WorkerHost {
 	constructor(private readonly userRepository: UserRepository) {
 		super();
 	}
 
 	public async process(job: Job): Promise<void> {
-		if (job.name === 'reset') await this.userRepository.resetBalances();
+		if (job.name === BALANCE_RESET_JOB) await this.userRepository.resetBalances();
 	}
 }
 
@@ -39,7 +40,7 @@ class BalanceProcessor extends WorkerHost {
 				},
 			}),
 		}),
-		BullModule.registerQueue({ name: 'balance-reset' }),
+		BullModule.registerQueue({ name: BALANCE_RESET_QUEUE }),
 	],
 	controllers: [UserController],
 	providers: [UserService, UserRepository, BalanceProcessor],
