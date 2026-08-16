@@ -3,8 +3,7 @@ import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@n
 
 import { SignUpRequestDto, SignInRequestDto, RefreshRequestDto, TokenPairResponseDto } from './dto';
 import { AuthService } from './auth.service';
-import { Public } from './decorators/public.decorator';
-import { CurrentUser } from './decorators/current-user.decorator';
+import { Public, CurrentUser } from './decorators';
 
 @ApiTags('Auth')
 @Controller('auth')

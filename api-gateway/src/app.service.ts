@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { IHealthGrpcClient } from './interfaces';
-import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE } from './gateway.constants';
+import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE, GRPC_HEALTH_STATUS_SERVING } from './gateway.constants';
 
 @Injectable()
 export class GatewayService {
@@ -33,7 +33,7 @@ export class GatewayService {
 		try {
 			const service = client.getService<IHealthGrpcClient>('Health');
 			const res = await firstValueFrom(service.check({ service: '' }));
-			return res.status === 1;
+			return res.status === GRPC_HEALTH_STATUS_SERVING;
 		} catch (error) {
 			this.logger.warn(`Health check failed for ${name}: ${(error as Error).message}`);
 			return false;

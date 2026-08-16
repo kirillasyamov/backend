@@ -1,9 +1,10 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUser } from '../auth/decorators';
 import { CreateUserRequestDto, UpdateUserRequestDto, CreateUserResponseDto, GetUserResponseDto, GetUsersResponseDto } from './dto';
 import { UserService } from './user.service';
+import { DEFAULT_PAGE, DEFAULT_LIMIT } from '@/gateway.constants';
 
 @ApiTags('User')
 @Controller('user')
@@ -54,7 +55,7 @@ export class UserController {
 	@ApiOkResponse({ type: GetUsersResponseDto })
 	@Get('all')
 	@HttpCode(HttpStatus.OK)
-	public async getUsers(@Query('page') page = 1, @Query('limit') limit = 10): Promise<GetUsersResponseDto> {
+	public async getUsers(@Query('page') page = DEFAULT_PAGE, @Query('limit') limit = DEFAULT_LIMIT): Promise<GetUsersResponseDto> {
 		return await this.userService.getUsers(page, limit);
 	}
 

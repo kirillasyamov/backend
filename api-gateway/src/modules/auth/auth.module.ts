@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtAuthGuard } from './guards';
 import { authProtoPath, userProtoPath, tokenProtoPath, healthProtoPath } from '@kirillasyamov/common';
+import { AUTH_PROTO_VERSION, USER_PROTO_VERSION, TOKEN_PROTO_VERSION, HEALTH_PROTO_VERSION } from '@kirillasyamov/common/contracts';
 import { grpcClients, grpcServiceConfig } from '@kirillasyamov/common/configs';
 import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE } from '@/gateway.constants';
 
@@ -11,9 +12,14 @@ import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE } from '@/gateway.constants';
 	imports: [
 		ClientsModule.registerAsync(
 			grpcClients([
-				{ name: AUTH_PACKAGE, packages: ['auth.v1', 'grpc.health.v1'], protoPaths: [authProtoPath, healthProtoPath], url: grpcServiceConfig.authServiceUrl },
-				{ name: USER_PACKAGE, packages: ['user.v1', 'grpc.health.v1'], protoPaths: [userProtoPath, healthProtoPath], url: grpcServiceConfig.userServiceUrl },
-				{ name: TOKEN_PACKAGE, packages: ['token.v1', 'grpc.health.v1'], protoPaths: [tokenProtoPath, healthProtoPath], url: grpcServiceConfig.tokenServiceUrl },
+				{ name: AUTH_PACKAGE, packages: [AUTH_PROTO_VERSION, HEALTH_PROTO_VERSION], protoPaths: [authProtoPath, healthProtoPath], url: grpcServiceConfig.authServiceUrl },
+				{ name: USER_PACKAGE, packages: [USER_PROTO_VERSION, HEALTH_PROTO_VERSION], protoPaths: [userProtoPath, healthProtoPath], url: grpcServiceConfig.userServiceUrl },
+				{
+					name: TOKEN_PACKAGE,
+					packages: [TOKEN_PROTO_VERSION, HEALTH_PROTO_VERSION],
+					protoPaths: [tokenProtoPath, healthProtoPath],
+					url: grpcServiceConfig.tokenServiceUrl,
+				},
 			]),
 		),
 	],

@@ -4,7 +4,7 @@ import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { decodeJwt } from 'jose';
 import type { TokenServiceClient } from '@kirillasyamov/common/contracts/generated/token';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { IS_PUBLIC_KEY } from '../decorators';
 import { IRequestWithUser } from '@/interfaces';
 import { TOKEN_PACKAGE } from '@/gateway.constants';
 

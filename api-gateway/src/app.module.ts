@@ -8,8 +8,7 @@ import { apiGatewaySchema, authSchema } from '@kirillasyamov/common/configs';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { GrpcToHttpExceptionFilter } from '@kirillasyamov/common/filters';
-import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
-import { RolesGuard } from './modules/auth/guards/roles.guard';
+import { JwtAuthGuard, RolesGuard } from './modules/auth/guards';
 
 @Module({
 	imports: [ConfigModule.forRoot(apiGatewaySchema, authSchema), ThrottlerModule.forRoot([{ ttl: 60000, limit: 5 }]), AuthModule, UserModule],

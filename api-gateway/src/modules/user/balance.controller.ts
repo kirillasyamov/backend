@@ -1,10 +1,9 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUser, Roles } from '../auth/decorators';
 import { TransferBalanceRequestDto, TransferBalanceResponseDto } from './dto';
 import { UserService } from './user.service';
-import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Balance')
 @Controller('balance')

@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { GatewayService } from './app.service';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Public } from './modules/auth/decorators/public.decorator';
+import { Public } from './modules/auth/decorators';
 import { AppInfoResponseDto, HealthResponseDto, StatusResponseDto } from './dto';
 
 @ApiTags('App')
