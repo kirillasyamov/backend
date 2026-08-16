@@ -38,6 +38,19 @@ export class AuthService implements OnModuleInit {
 		this.userGrpcService = this.userClient.getService<UserServiceClient>('UserService');
 	}
 
+	private async callGrpc<T>(service: string, method: string, operation: () => Promise<T>): Promise<T> {
+		const started = Date.now();
+		try {
+			const result = await operation();
+			this.logger.debug(`${service}.${method} ok ${String(Date.now() - started)}ms`);
+			return result;
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			this.logger.debug(`${service}.${method} failed ${String(Date.now() - started)}ms: ${message}`);
+			throw error;
+		}
+	}
+
 	public async signUp(request: SignUpRequestDto): Promise<TokenPair> {
 		const { login, email, password, device, age, bio } = request;
 		let accountId, profileId;
@@ -81,27 +94,27 @@ export class AuthService implements OnModuleInit {
 	}
 
 	private async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
-		return firstValueFrom(this.userGrpcService.createUser(request));
+		return this.callGrpc('UserService', 'createUser', async () => firstValueFrom(this.userGrpcService.createUser(request)));
 	}
 	private async deleteUser(request: DeleteUserRequest): Promise<Empty> {
-		return firstValueFrom(this.userGrpcService.deleteUser(request));
+		return this.callGrpc('UserService', 'deleteUser', async () => firstValueFrom(this.userGrpcService.deleteUser(request)));
 	}
 	private async createAccount(request: CreateAccountRequest): Promise<CreateAccountResponse> {
-		return firstValueFrom(this.authGrpcService.createAccount(request));
+		return this.callGrpc('AuthService', 'createAccount', async () => firstValueFrom(this.authGrpcService.createAccount(request)));
 	}
 	private async deleteAccount(request: DeleteAccountRequest): Promise<Empty> {
-		return firstValueFrom(this.authGrpcService.deleteAccount(request));
+		return this.callGrpc('AuthService', 'deleteAccount', async () => firstValueFrom(this.authGrpcService.deleteAccount(request)));
 	}
 	private async createSession(request: CreateSessionRequest): Promise<CreateSessionResponse> {
-		return firstValueFrom(this.authGrpcService.createSession(request));
+		return this.callGrpc('AuthService', 'createSession', async () => firstValueFrom(this.authGrpcService.createSession(request)));
 	}
 
 	async revokeSession(request: RevokeSessionRequest): Promise<Empty> {
-		return firstValueFrom(this.authGrpcService.revokeSession(request));
+		return this.callGrpc('AuthService', 'revokeSession', async () => firstValueFrom(this.authGrpcService.revokeSession(request)));
 	}
 
 	async refreshSession(request: RefreshSessionRequest): Promise<TokenPair> {
-		const { tokens } = await firstValueFrom(this.authGrpcService.refreshSession(request));
+		const { tokens } = await this.callGrpc('AuthService', 'refreshSession', async () => firstValueFrom(this.authGrpcService.refreshSession(request)));
 		if (!tokens) throw new UnauthorizedException('Failed to refresh session');
 		return tokens;
 	}
@@ -111,12 +124,12 @@ export class AuthService implements OnModuleInit {
 
 		let account: CreateAccountResponse;
 		if (login) {
-			account = await firstValueFrom(this.authGrpcService.getAccountByLogin({ login }));
+			account = await this.callGrpc('AuthService', 'getAccountByLogin', async () => firstValueFrom(this.authGrpcService.getAccountByLogin({ login })));
 		} else {
 			if (!email) {
 				throw new BadRequestException('Either login or email must be provided');
 			}
-			account = await firstValueFrom(this.authGrpcService.getAccountByEmail({ email }));
+			account = await this.callGrpc('AuthService', 'getAccountByEmail', async () => firstValueFrom(this.authGrpcService.getAccountByEmail({ email })));
 		}
 
 		const { tokens } = await this.createSession({

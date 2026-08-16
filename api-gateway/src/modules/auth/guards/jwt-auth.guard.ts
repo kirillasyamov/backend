@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Inject, Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject, Injectable, Logger, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -10,6 +10,7 @@ import { TOKEN_PACKAGE } from '@/gateway.constants';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate, OnModuleInit {
+	private readonly logger = new Logger(JwtAuthGuard.name);
 	private tokenGrpcService!: TokenServiceClient;
 
 	constructor(
@@ -27,17 +28,25 @@ export class JwtAuthGuard implements CanActivate, OnModuleInit {
 
 		const request = context.switchToHttp().getRequest<IRequestWithUser>();
 		const token = this.extractTokenFromHeader(request);
-		if (!token) throw new UnauthorizedException('Missing authentication token');
+		if (!token) {
+			this.logger.debug('Rejecting request: missing auth token');
+			throw new UnauthorizedException('Missing authentication token');
+		}
 
 		try {
 			const response = await firstValueFrom(this.tokenGrpcService.validateJwt({ jsonWebToken: token }));
-			if (!response.isValid) throw new UnauthorizedException('Invalid or expired token');
+			if (!response.isValid) {
+				this.logger.warn('Rejecting request: invalid or expired token');
+				throw new UnauthorizedException('Invalid or expired token');
+			}
 
 			const payload = decodeJwt(token);
 			request.user = payload;
+			this.logger.debug(`Authenticated request: sub=${payload.sub ?? 'unknown'}`);
 			return true;
 		} catch (error) {
 			if (error instanceof UnauthorizedException) throw error;
+			this.logger.warn('Rejecting request: token validation failed');
 			throw new UnauthorizedException('Token validation failed');
 		}
 	}

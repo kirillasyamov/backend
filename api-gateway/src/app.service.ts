@@ -33,7 +33,9 @@ export class GatewayService {
 		try {
 			const service = client.getService<IHealthGrpcClient>('Health');
 			const res = await firstValueFrom(service.check({ service: '' }));
-			return res.status === GRPC_HEALTH_STATUS_SERVING;
+			const healthy = res.status === GRPC_HEALTH_STATUS_SERVING;
+			if (healthy) this.logger.debug(`Health check ok for ${name}`);
+			return healthy;
 		} catch (error) {
 			this.logger.warn(`Health check failed for ${name}: ${(error as Error).message}`);
 			return false;

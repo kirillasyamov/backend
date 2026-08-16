@@ -8,6 +8,7 @@ import { apiGatewaySchema, authSchema } from '@kirillasyamov/common/configs';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { GrpcToHttpExceptionFilter } from '@kirillasyamov/common/filters';
+import { LoggingInterceptor } from '@kirillasyamov/common/interceptors';
 import { JwtAuthGuard, RolesGuard } from './modules/auth/guards';
 
 @Module({
@@ -20,6 +21,7 @@ import { JwtAuthGuard, RolesGuard } from './modules/auth/guards';
 		{ provide: APP_GUARD, useClass: JwtAuthGuard },
 		{ provide: APP_GUARD, useClass: RolesGuard },
 		{ provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
+		{ provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
 		{ provide: APP_FILTER, useClass: GrpcToHttpExceptionFilter },
 	],
 })
