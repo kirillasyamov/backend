@@ -1,4 +1,4 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -35,6 +35,7 @@ import { toTimestamp } from '@kirillasyamov/common/utils';
 
 @Injectable()
 export class AuthService implements AuthServiceControllerInterface, OnModuleInit {
+	private readonly logger = new Logger(AuthService.name);
 	private tokenGrpcService!: TokenServiceClient;
 
 	constructor(
@@ -56,6 +57,7 @@ export class AuthService implements AuthServiceControllerInterface, OnModuleInit
 				passwordHash: await hash(request.password),
 				roleId: DEFAULT_ROLE_ID,
 			});
+			this.logger.log(`Account created: id=${account.id} login=${request.login}`);
 			return {
 				accountId: account.id,
 				login: request.login,
@@ -71,6 +73,7 @@ export class AuthService implements AuthServiceControllerInterface, OnModuleInit
 					message: `An account with this ${field} already exists`,
 				});
 			}
+			this.logger.error(`Failed to create account (login=${request.login})`, error instanceof Error ? error.stack : String(error));
 			throw error;
 		}
 	}
@@ -78,39 +81,47 @@ export class AuthService implements AuthServiceControllerInterface, OnModuleInit
 	public async deleteAccount(request: DeleteAccountRequest): Promise<void> {
 		if (!request.id) return;
 		await this.accountRepository.delete(request.id);
+		this.logger.log(`Account deleted: id=${request.id}`);
 	}
 
 	public async changePassword(request: ChangePasswordRequest): Promise<void> {
 		const account = await this.accountRepository.findById(request.accountId);
 		if (!account) {
+			this.logger.warn(`Password change failed: account ${request.accountId} not found`);
 			throw new RpcException({ code: status.NOT_FOUND, message: 'Account not found' });
 		}
 
 		const isValid = await verify(account.passwordHash, request.oldPassword);
 		if (!isValid) {
+			this.logger.warn(`Password change failed for account ${request.accountId}: current password is incorrect`);
 			throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'Current password is incorrect' });
 		}
 
 		await this.accountRepository.updatePassword(request.accountId, await hash(request.newPassword));
 		await this.sessionRepository.deleteByAccountId(request.accountId);
+		this.logger.log(`Password changed for account ${request.accountId}; sessions revoked`);
 	}
 
 	public async changeEmail(request: ChangeEmailRequest): Promise<void> {
 		const account = await this.accountRepository.findById(request.accountId);
 		if (!account) {
+			this.logger.warn(`Email change failed: account ${request.accountId} not found`);
 			throw new RpcException({ code: status.NOT_FOUND, message: 'Account not found' });
 		}
 		await this.accountRepository.updateEmail(request.accountId, request.newEmail);
+		this.logger.log(`Email changed for account ${request.accountId}`);
 	}
 
 	public async createSession(request: CreateSessionRequest): Promise<CreateSessionResponse> {
 		const account = await this.accountRepository.findById(request.accountId);
 		if (!account) {
+			this.logger.warn(`Session creation failed: account ${request.accountId} not found`);
 			throw new RpcException({ code: status.NOT_FOUND, message: 'Account not found' });
 		}
 
 		const isValid = await verify(account.passwordHash, request.password);
 		if (!isValid) {
+			this.logger.warn(`Session creation failed for account ${request.accountId}: invalid password`);
 			throw new RpcException({ code: status.UNAUTHENTICATED, message: 'Invalid password' });
 		}
 
@@ -130,6 +141,7 @@ export class AuthService implements AuthServiceControllerInterface, OnModuleInit
 			}),
 		);
 
+		this.logger.log(`Session created: id=${session.id} accountId=${request.accountId}`);
 		return {
 			tokens: { accessToken: jsonWebToken, refreshToken: session.refreshToken },
 			expiresAt: toTimestamp(session.expiresAt),
@@ -139,6 +151,7 @@ export class AuthService implements AuthServiceControllerInterface, OnModuleInit
 
 	public async revokeSession(request: RevokeSessionRequest): Promise<void> {
 		await this.sessionRepository.delete(request.sessionId);
+		this.logger.log(`Session revoked: id=${request.sessionId}`);
 	}
 
 	public async refreshSession(request: RefreshSessionRequest): Promise<RefreshSessionResponse> {
@@ -150,6 +163,7 @@ export class AuthService implements AuthServiceControllerInterface, OnModuleInit
 		});
 		if (!session) {
 			const expired = await this.sessionRepository.deleteExpiredTokens(request.refreshToken);
+			this.logger.warn(`Session refresh failed: ${expired > 0 ? 'refresh token expired' : 'invalid refresh token'}`);
 			throw new RpcException({
 				code: status.UNAUTHENTICATED,
 				message: expired > 0 ? 'Refresh token expired' : 'Invalid refresh token',
@@ -166,6 +180,7 @@ export class AuthService implements AuthServiceControllerInterface, OnModuleInit
 			}),
 		);
 
+		this.logger.log(`Session refreshed: id=${session.id} accountId=${session.accountId}`);
 		return { tokens: { accessToken: jsonWebToken, refreshToken: session.refreshToken } };
 	}
 
