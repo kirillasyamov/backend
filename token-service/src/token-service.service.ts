@@ -39,6 +39,7 @@ export class TokenService implements TokenServiceControllerInterface {
 			return { jsonWebToken: jwt };
 		} catch (error) {
 			if (error instanceof RpcException) throw error;
+			this.logger.error(`Failed to generate JWT (sub=${request.sub})`, error instanceof Error ? error.stack : String(error));
 			throw new RpcException({
 				code: status.INTERNAL,
 				message: 'Failed to generate JWT',
@@ -49,7 +50,10 @@ export class TokenService implements TokenServiceControllerInterface {
 	public async validateJwt(request: ValidateJWTRequest): Promise<ValidateJWTResponse> {
 		try {
 			const isBlacklisted = await this.blacklist.isBlacklisted(request.jsonWebToken);
-			if (isBlacklisted) return { isValid: false };
+			if (isBlacklisted) {
+				this.logger.debug('JWT validation failed: token is blacklisted');
+				return { isValid: false };
+			}
 			const publicKey = await importSPKI(jwtConfig.publicKey, JWT_ALG);
 			await jwtVerify(request.jsonWebToken, publicKey, { issuer: jwtConfig.issuer });
 			return { isValid: true };
@@ -73,6 +77,7 @@ export class TokenService implements TokenServiceControllerInterface {
 			this.logger.debug(`Invalidated JWT with jti=${payload.jti ?? 'unknown'}, ttl=${String(ttl)}s`);
 		} catch (error) {
 			if (error instanceof RpcException) throw error;
+			this.logger.error('Failed to invalidate JWT', error instanceof Error ? error.stack : String(error));
 			throw new RpcException({
 				code: status.INTERNAL,
 				message: 'Failed to invalidate JWT',
