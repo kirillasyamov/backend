@@ -46,6 +46,7 @@ export class UserService implements UserServiceControllerInterface {
 				age: request.age,
 				bio: request.bio,
 			});
+			this.logger.log(`User created or reactivated: id=${user.id} login=${request.login}`);
 			return { userProfile: this.adaptToProfile(user), profileId: user.id };
 		} catch (error) {
 			if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -56,6 +57,7 @@ export class UserService implements UserServiceControllerInterface {
 					message: `A user with this ${field} already exists`,
 				});
 			}
+			this.logger.error(`Failed to create user (login=${request.login})`, error instanceof Error ? error.stack : String(error));
 			throw error;
 		}
 	}
@@ -93,6 +95,7 @@ export class UserService implements UserServiceControllerInterface {
 			bio: request.bio,
 		});
 
+		this.logger.log(`User updated: login=${request.login}`);
 		return { userProfile: this.adaptToProfile(user) };
 	}
 
@@ -110,6 +113,7 @@ export class UserService implements UserServiceControllerInterface {
 				throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'Either id or login must be provided' });
 			}
 			await this.userRepository.softDelete(id);
+			this.logger.log(`User soft-deleted: id=${id}${request.login ? ` login=${request.login}` : ''}`);
 		} catch (error) {
 			if (error instanceof RpcException) throw error;
 			if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
@@ -128,16 +132,23 @@ export class UserService implements UserServiceControllerInterface {
 		if (!sender) throw new RpcException({ code: status.NOT_FOUND, message: 'Sender not found' });
 		const recipient = await this.userRepository.findByLogin(request.recipientLogin);
 		if (!recipient) throw new RpcException({ code: status.NOT_FOUND, message: 'Recipient not found' });
-		if (amount.greaterThan(sender.balance)) throw new RpcException({ code: status.FAILED_PRECONDITION, message: 'Insufficient funds' });
+		if (amount.greaterThan(sender.balance)) {
+			this.logger.warn(`Balance transfer failed: insufficient funds (sender=${request.senderLogin}, amount=${request.amount})`);
+			throw new RpcException({ code: status.FAILED_PRECONDITION, message: 'Insufficient funds' });
+		}
 
 		try {
 			await this.userRepository.transferBalance(sender.id, recipient.id, amount, request.idempotencyKey);
 		} catch (error) {
-			if (error instanceof Error) throw new RpcException({ code: status.FAILED_PRECONDITION, message: error.message });
+			if (error instanceof Error) {
+				this.logger.warn(`Balance transfer failed (sender=${request.senderLogin}, recipient=${request.recipientLogin}, amount=${request.amount}): ${error.message}`);
+				throw new RpcException({ code: status.FAILED_PRECONDITION, message: error.message });
+			}
 			throw error;
 		}
 		const updated = await this.userRepository.findByLogin(request.senderLogin);
 		if (!updated) throw new RpcException({ code: status.NOT_FOUND, message: 'Sender not found' });
+		this.logger.log(`Balance transferred: ${request.senderLogin} -> ${request.recipientLogin}, amount=${request.amount}`);
 		return { updatedBalance: updated.balance.toFixed(2) };
 	}
 
