@@ -1,8 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { REDIS_CLIENT } from '@kirillasyamov/common';
 import type Redis from 'ioredis';
-
-const BLACKLIST_PREFIX = 'jwt:blacklist:';
+import { BLACKLIST_PREFIX } from '@/token-service.constants';
 
 @Injectable()
 export class BlacklistService {

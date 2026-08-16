@@ -3,23 +3,29 @@ import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { SignJWT, jwtVerify, importPKCS8, importSPKI, type JWTPayload } from 'jose';
 import { randomUUID } from 'node:crypto';
-import type { GenerateJWTRequest, GenerateJWTResponse, ValidateJWTRequest, ValidateJWTResponse, InvalidateJWTRequest } from '@kirillasyamov/common/contracts/generated/token';
+import type {
+	TokenServiceController as TokenServiceControllerInterface,
+	GenerateJWTRequest,
+	GenerateJWTResponse,
+	ValidateJWTRequest,
+	ValidateJWTResponse,
+	InvalidateJWTRequest,
+} from '@kirillasyamov/common/contracts/generated/token';
 import { jwtConfig } from '@kirillasyamov/common/configs';
+import { JWT_ALG, JWT_KID } from './token-service.constants';
 import { BlacklistService } from './modules/blacklist/blacklist.service';
 
 @Injectable()
-export class TokenService {
+export class TokenService implements TokenServiceControllerInterface {
 	private readonly logger = new Logger(TokenService.name);
-	private readonly alg = 'RS256' as const;
-	private readonly kid = 'primary';
 
 	constructor(private readonly blacklist: BlacklistService) {}
 
 	public async generateJwt(request: GenerateJWTRequest): Promise<GenerateJWTResponse> {
 		try {
-			const privateKey = await importPKCS8(jwtConfig.privateKey, this.alg);
+			const privateKey = await importPKCS8(jwtConfig.privateKey, JWT_ALG);
 			const jwt = await new SignJWT({ ...request.extraClaims })
-				.setProtectedHeader({ alg: this.alg, kid: this.kid })
+				.setProtectedHeader({ alg: JWT_ALG, kid: JWT_KID })
 				.setSubject(request.sub)
 				.setAudience(request.aud)
 				.setIssuer(jwtConfig.issuer)
@@ -44,7 +50,7 @@ export class TokenService {
 		try {
 			const isBlacklisted = await this.blacklist.isBlacklisted(request.jsonWebToken);
 			if (isBlacklisted) return { isValid: false };
-			const publicKey = await importSPKI(jwtConfig.publicKey, this.alg);
+			const publicKey = await importSPKI(jwtConfig.publicKey, JWT_ALG);
 			await jwtVerify(request.jsonWebToken, publicKey, { issuer: jwtConfig.issuer });
 			return { isValid: true };
 		} catch (error) {
@@ -75,7 +81,7 @@ export class TokenService {
 	}
 
 	private async decodeToken(token: string): Promise<JWTPayload> {
-		const { payload } = await jwtVerify(token, await importSPKI(jwtConfig.publicKey, this.alg), { issuer: jwtConfig.issuer });
+		const { payload } = await jwtVerify(token, await importSPKI(jwtConfig.publicKey, JWT_ALG), { issuer: jwtConfig.issuer });
 		return payload;
 	}
 }
