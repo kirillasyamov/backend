@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { UserController } from './user-service.controller';
 import { UserService } from './user-service.service';
-import { UserRepository } from './repositories/user.repository';
+import { UserRepository } from './repositories';
 import { BALANCE_RESET_QUEUE, BALANCE_RESET_JOB } from './user-service.constants';
 import { PrismaModule, ConfigModule } from '@kirillasyamov/common';
 import { PrismaClient } from '@prismagen/client';

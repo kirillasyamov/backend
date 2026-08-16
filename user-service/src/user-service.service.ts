@@ -3,7 +3,7 @@ import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { Prisma, User } from '@prismagen/client';
-import { UserRepository } from './repositories/user.repository';
+import { UserRepository } from './repositories';
 import { BALANCE_RESET_QUEUE, BALANCE_RESET_JOB, DEFAULT_PAGE, DEFAULT_LIMIT } from './user-service.constants';
 import {
 	UserServiceController as UserServiceControllerInterface,

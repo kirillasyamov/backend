@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { mockDeep } from 'vitest-mock-extended';
 import { status } from '@grpc/grpc-js';
 import { UserService } from './user-service.service';
-import { UserRepository } from './repositories/user.repository';
+import { UserRepository } from './repositories';
 import { BALANCE_RESET_QUEUE } from './user-service.constants';
 import { vi } from 'vitest';
 import { getQueueToken } from '@nestjs/bullmq';
