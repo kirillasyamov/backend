@@ -1,12 +1,10 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { TokenPair } from '@kirillasyamov/common/contracts/generated/auth';
-import { AuthServiceClient } from '@kirillasyamov/common/contracts/generated/auth';
-import { UserServiceClient } from '@kirillasyamov/common/contracts/generated/user';
-import { Empty } from '@kirillasyamov/common/contracts/generated/google/protobuf/empty';
 
 import type {
+	AuthServiceClient,
+	TokenPair,
 	CreateAccountRequest,
 	CreateAccountResponse,
 	DeleteAccountRequest,
@@ -16,13 +14,17 @@ import type {
 	RefreshSessionRequest,
 } from '@kirillasyamov/common/contracts/generated/auth';
 
-import type { CreateUserRequest, CreateUserResponse, DeleteUserRequest } from '@kirillasyamov/common/contracts/generated/user';
+import type { UserServiceClient, CreateUserRequest, CreateUserResponse, DeleteUserRequest } from '@kirillasyamov/common/contracts/generated/user';
+
+import type { Empty } from '@kirillasyamov/common/contracts/generated/google/protobuf/empty';
 
 import { SignUpRequestDto, SignInRequestDto } from './dto';
 import { AUTH_PACKAGE, USER_PACKAGE, DEFAULT_ROLE_ID, TOKEN_CREATION_ERROR } from '@/gateway.constants';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
+	private readonly logger = new Logger(AuthService.name);
+
 	private authGrpcService!: AuthServiceClient;
 	private userGrpcService!: UserServiceClient;
 
@@ -54,11 +56,28 @@ export class AuthService implements OnModuleInit {
 			profileId = user.profileId;
 			if (session.tokens) return session.tokens;
 		} catch (error) {
-			if (accountId) await this.deleteAccount({ id: accountId });
-			if (profileId) await this.deleteUser({ id: profileId });
+			await this.rollback(accountId, profileId);
 			throw error;
 		}
-		throw new Error(TOKEN_CREATION_ERROR);
+		await this.rollback(accountId, profileId);
+		throw new InternalServerErrorException(TOKEN_CREATION_ERROR);
+	}
+
+	private async rollback(accountId?: string, profileId?: string): Promise<void> {
+		if (accountId) {
+			try {
+				await this.deleteAccount({ id: accountId });
+			} catch (error) {
+				this.logger.error(`Failed to rollback account ${accountId}`, error instanceof Error ? error.stack : String(error));
+			}
+		}
+		if (profileId) {
+			try {
+				await this.deleteUser({ id: profileId });
+			} catch (error) {
+				this.logger.error(`Failed to rollback user ${profileId}`, error instanceof Error ? error.stack : String(error));
+			}
+		}
 	}
 
 	private async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
@@ -83,7 +102,7 @@ export class AuthService implements OnModuleInit {
 
 	async refreshSession(request: RefreshSessionRequest): Promise<TokenPair> {
 		const { tokens } = await firstValueFrom(this.authGrpcService.refreshSession(request));
-		if (!tokens) throw new Error('Failed to refresh session');
+		if (!tokens) throw new UnauthorizedException('Failed to refresh session');
 		return tokens;
 	}
 
@@ -95,7 +114,7 @@ export class AuthService implements OnModuleInit {
 			account = await firstValueFrom(this.authGrpcService.getAccountByLogin({ login }));
 		} else {
 			if (!email) {
-				throw new Error('Either login or email must be provided');
+				throw new BadRequestException('Either login or email must be provided');
 			}
 			account = await firstValueFrom(this.authGrpcService.getAccountByEmail({ email }));
 		}
@@ -110,7 +129,7 @@ export class AuthService implements OnModuleInit {
 		});
 
 		if (tokens) return tokens;
-		throw new Error(TOKEN_CREATION_ERROR);
+		throw new InternalServerErrorException(TOKEN_CREATION_ERROR);
 	}
 
 	async signOut(sessionId: string): Promise<void> {
