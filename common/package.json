@@ -1,6 +1,6 @@
 {
 	"name": "@kirillasyamov/common",
-	"version": "3.0.12",
+	"version": "3.0.13",
 	"description": "Shared contracts, configs, modules and filters for the application",
 	"type": "module",
 	"main": "./dist/index.js",
@@ -35,6 +35,10 @@
 		"./enums/*": {
 			"types": "./dist/enums/*.d.ts",
 			"default": "./dist/enums/*.js"
+		},
+		"./contracts": {
+			"types": "./dist/contracts/contracts.constants.d.ts",
+			"default": "./dist/contracts/contracts.constants.js"
 		},
 		"./contracts/generated/*": {
 			"types": "./dist/contracts/generated/*.d.ts",
