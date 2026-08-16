@@ -11,6 +11,6 @@
 		"rootDir": ".",
 		"noEmit": false
 	},
-	"include": ["index.ts", "modules/**/*", "utils/**/*", "contracts/**/*", "configs/**/*", "filters/**/*", "enums/**/*"],
+	"include": ["index.ts", "modules/**/*", "utils/**/*", "contracts/**/*", "configs/**/*", "filters/**/*", "interceptors/**/*", "enums/**/*"],
 	"exclude": ["node_modules", "dist"]
 }
