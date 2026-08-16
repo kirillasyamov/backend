@@ -18,14 +18,8 @@ import type {
 
 import type { CreateUserRequest, CreateUserResponse, DeleteUserRequest } from '@kirillasyamov/common/contracts/generated/user';
 
-interface SignUpRequest {
-	login: string;
-	email: string;
-	password: string;
-	device: string;
-	age: number;
-	bio: string;
-}
+import { SignUpRequestDto, SignInRequestDto } from './dto';
+import { AUTH_PACKAGE, USER_PACKAGE, DEFAULT_ROLE_ID, TOKEN_CREATION_ERROR } from '@/gateway.constants';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -33,8 +27,8 @@ export class AuthService implements OnModuleInit {
 	private userGrpcService!: UserServiceClient;
 
 	constructor(
-		@Inject('AUTH_PACKAGE') private authClient: ClientGrpc,
-		@Inject('USER_PACKAGE') private userClient: ClientGrpc,
+		@Inject(AUTH_PACKAGE) private authClient: ClientGrpc,
+		@Inject(USER_PACKAGE) private userClient: ClientGrpc,
 	) {}
 
 	onModuleInit() {
@@ -42,7 +36,7 @@ export class AuthService implements OnModuleInit {
 		this.userGrpcService = this.userClient.getService<UserServiceClient>('UserService');
 	}
 
-	public async signUp(request: SignUpRequest): Promise<TokenPair> {
+	public async signUp(request: SignUpRequestDto): Promise<TokenPair> {
 		const { login, email, password, device, age, bio } = request;
 		let accountId, profileId;
 		try {
@@ -50,7 +44,7 @@ export class AuthService implements OnModuleInit {
 			accountId = account.accountId;
 			const session = await this.createSession({
 				accountId: account.accountId,
-				roleId: 1,
+				roleId: DEFAULT_ROLE_ID,
 				password,
 				device,
 				expiresAt: undefined,
@@ -64,7 +58,7 @@ export class AuthService implements OnModuleInit {
 			if (profileId) await this.deleteUser({ id: profileId });
 			throw error;
 		}
-		throw new Error('Failed to create access and refresh tokens');
+		throw new Error(TOKEN_CREATION_ERROR);
 	}
 
 	private async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
@@ -93,7 +87,7 @@ export class AuthService implements OnModuleInit {
 		return tokens;
 	}
 
-	public async signIn(request: { login?: string; email?: string; password: string; device: string }): Promise<TokenPair> {
+	public async signIn(request: SignInRequestDto): Promise<TokenPair> {
 		const { login, email, password, device } = request;
 
 		let account: CreateAccountResponse;
@@ -116,7 +110,7 @@ export class AuthService implements OnModuleInit {
 		});
 
 		if (tokens) return tokens;
-		throw new Error('Failed to create access and refresh tokens');
+		throw new Error(TOKEN_CREATION_ERROR);
 	}
 
 	async signOut(sessionId: string): Promise<void> {

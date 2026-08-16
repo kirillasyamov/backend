@@ -10,8 +10,9 @@ import type {
 	GetUsersResponse,
 	UpdateUserResponse,
 	TransferBalanceResponse,
-	TransferBalanceRequest,
 } from '@kirillasyamov/common/contracts/generated/user';
+import { AUTH_PACKAGE, USER_PACKAGE } from '@/gateway.constants';
+import { CreateUserRequestDto, UpdateUserRequestDto, TransferBalanceRequestDto } from './dto';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -19,8 +20,8 @@ export class UserService implements OnModuleInit {
 	private userGrpcService!: UserServiceClient;
 
 	constructor(
-		@Inject('AUTH_PACKAGE') private readonly authClient: ClientGrpc,
-		@Inject('USER_PACKAGE') private readonly userClient: ClientGrpc,
+		@Inject(AUTH_PACKAGE) private readonly authClient: ClientGrpc,
+		@Inject(USER_PACKAGE) private readonly userClient: ClientGrpc,
 	) {}
 
 	onModuleInit() {
@@ -28,14 +29,16 @@ export class UserService implements OnModuleInit {
 		this.userGrpcService = this.userClient.getService<UserServiceClient>('UserService');
 	}
 
-	public async createUser(accountId: string, data: { age: number; bio: string }): Promise<CreateUserResponse> {
+	public async createUser(accountId: string, data: CreateUserRequestDto): Promise<CreateUserResponse> {
 		const { login, email } = await firstValueFrom(this.authGrpcService.getAccountById({ id: accountId }));
-		return firstValueFrom(this.userGrpcService.createUser({ login, email, ...data }));
+		const { age, bio } = data;
+		return firstValueFrom(this.userGrpcService.createUser({ login, email, age, bio }));
 	}
 
-	public async updateUser(accountId: string, data: { age?: number; bio?: string }): Promise<UpdateUserResponse> {
+	public async updateUser(accountId: string, data: UpdateUserRequestDto): Promise<UpdateUserResponse> {
 		const { login } = await firstValueFrom(this.authGrpcService.getAccountById({ id: accountId }));
-		return firstValueFrom(this.userGrpcService.updateUser({ login, ...data }));
+		const { age, bio } = data;
+		return firstValueFrom(this.userGrpcService.updateUser({ login, age, bio }));
 	}
 
 	public async getUsers(page: number, limit: number): Promise<GetUsersResponse> {
@@ -56,9 +59,10 @@ export class UserService implements OnModuleInit {
 		await firstValueFrom(this.userGrpcService.deleteUser({ login }));
 	}
 
-	public async transferBalance(accountId: string, request: Omit<TransferBalanceRequest, 'senderLogin'>): Promise<TransferBalanceResponse> {
+	public async transferBalance(accountId: string, request: TransferBalanceRequestDto): Promise<TransferBalanceResponse> {
 		const { login: senderLogin } = await firstValueFrom(this.authGrpcService.getAccountById({ id: accountId }));
-		return firstValueFrom(this.userGrpcService.transferBalance({ senderLogin, ...request }));
+		const { recipientLogin, amount, idempotencyKey } = request;
+		return firstValueFrom(this.userGrpcService.transferBalance({ senderLogin, recipientLogin, amount, idempotencyKey }));
 	}
 
 	public async resetBalance(): Promise<void> {

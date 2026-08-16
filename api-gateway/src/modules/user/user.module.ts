@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { authProtoPath, userProtoPath, healthProtoPath } from '@kirillasyamov/common';
 import { grpcServiceConfig } from '@kirillasyamov/common/configs';
+import { AUTH_PACKAGE, USER_PACKAGE } from '@/gateway.constants';
 import { UserController } from './user.controller';
 import { UserBalanceController } from './balance.controller';
 import { UserService } from './user.service';
@@ -10,7 +11,7 @@ import { UserService } from './user.service';
 	imports: [
 		ClientsModule.registerAsync([
 			{
-				name: 'AUTH_PACKAGE',
+				name: AUTH_PACKAGE,
 				useFactory: () => ({
 					transport: Transport.GRPC,
 					options: {
@@ -22,7 +23,7 @@ import { UserService } from './user.service';
 				}),
 			},
 			{
-				name: 'USER_PACKAGE',
+				name: USER_PACKAGE,
 				useFactory: () => ({
 					transport: Transport.GRPC,
 					options: {

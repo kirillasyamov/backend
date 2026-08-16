@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { GatewayController } from './app.controller';
 import { GatewayService } from './app.service';
@@ -20,6 +20,7 @@ import { RolesGuard } from './modules/auth/guards/roles.guard';
 		{ provide: APP_GUARD, useClass: ThrottlerGuard },
 		{ provide: APP_GUARD, useClass: JwtAuthGuard },
 		{ provide: APP_GUARD, useClass: RolesGuard },
+		{ provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
 		{ provide: APP_FILTER, useClass: GrpcToHttpExceptionFilter },
 	],
 })

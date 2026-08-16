@@ -5,11 +5,8 @@ import { firstValueFrom } from 'rxjs';
 import { decodeJwt } from 'jose';
 import type { TokenServiceClient } from '@kirillasyamov/common/contracts/generated/token';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-
-interface RequestWithUser {
-	headers?: { authorization?: string };
-	user?: unknown;
-}
+import { IRequestWithUser } from '@/interfaces';
+import { TOKEN_PACKAGE } from '@/gateway.constants';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate, OnModuleInit {
@@ -17,7 +14,7 @@ export class JwtAuthGuard implements CanActivate, OnModuleInit {
 
 	constructor(
 		private readonly reflector: Reflector,
-		@Inject('TOKEN_PACKAGE') private readonly tokenClient: ClientGrpc,
+		@Inject(TOKEN_PACKAGE) private readonly tokenClient: ClientGrpc,
 	) {}
 
 	onModuleInit() {
@@ -28,7 +25,7 @@ export class JwtAuthGuard implements CanActivate, OnModuleInit {
 		const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
 		if (isPublic) return true;
 
-		const request = context.switchToHttp().getRequest<RequestWithUser>();
+		const request = context.switchToHttp().getRequest<IRequestWithUser>();
 		const token = this.extractTokenFromHeader(request);
 		if (!token) throw new UnauthorizedException('Missing authentication token');
 
@@ -45,7 +42,7 @@ export class JwtAuthGuard implements CanActivate, OnModuleInit {
 		}
 	}
 
-	private extractTokenFromHeader(request: RequestWithUser): string | undefined {
+	private extractTokenFromHeader(request: IRequestWithUser): string | undefined {
 		const authHeader = request.headers?.authorization;
 		if (!authHeader) return undefined;
 		const [type, token] = authHeader.split(' ');

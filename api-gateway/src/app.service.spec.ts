@@ -3,14 +3,12 @@ import { mockDeep } from 'vitest-mock-extended';
 import { of } from 'rxjs';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { GatewayService } from './app.service';
-
-interface HealthGrpcClient {
-	check(request: { service: string }): { status: number };
-}
+import type { IHealthGrpcClient } from './interfaces';
+import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE } from './gateway.constants';
 
 const mockGrpcClient = (status: number): ClientGrpc => {
-	const health = mockDeep<HealthGrpcClient>();
-	health.check.mockReturnValue(of({ status }) as never);
+	const health = mockDeep<IHealthGrpcClient>();
+	health.check.mockReturnValue(of({ status }));
 	return { getService: () => health } as unknown as ClientGrpc;
 };
 
@@ -19,9 +17,9 @@ describe('GatewayService', () => {
 		const moduleRef = await Test.createTestingModule({
 			providers: [
 				GatewayService,
-				{ provide: 'AUTH_PACKAGE', useValue: mockGrpcClient(1) },
-				{ provide: 'USER_PACKAGE', useValue: mockGrpcClient(1) },
-				{ provide: 'TOKEN_PACKAGE', useValue: mockGrpcClient(1) },
+				{ provide: AUTH_PACKAGE, useValue: mockGrpcClient(1) },
+				{ provide: USER_PACKAGE, useValue: mockGrpcClient(1) },
+				{ provide: TOKEN_PACKAGE, useValue: mockGrpcClient(1) },
 			],
 		}).compile();
 		const service = moduleRef.get(GatewayService);
@@ -41,9 +39,9 @@ describe('GatewayService', () => {
 		const moduleRef = await Test.createTestingModule({
 			providers: [
 				GatewayService,
-				{ provide: 'AUTH_PACKAGE', useValue: mockGrpcClient(1) },
-				{ provide: 'USER_PACKAGE', useValue: mockGrpcClient(1) },
-				{ provide: 'TOKEN_PACKAGE', useValue: tokenClient },
+				{ provide: AUTH_PACKAGE, useValue: mockGrpcClient(1) },
+				{ provide: USER_PACKAGE, useValue: mockGrpcClient(1) },
+				{ provide: TOKEN_PACKAGE, useValue: tokenClient },
 			],
 		}).compile();
 		const service = moduleRef.get(GatewayService);

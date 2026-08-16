@@ -5,12 +5,13 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { authProtoPath, userProtoPath, tokenProtoPath, healthProtoPath } from '@kirillasyamov/common';
 import { grpcServiceConfig } from '@kirillasyamov/common/configs';
+import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE } from '@/gateway.constants';
 
 @Module({
 	imports: [
 		ClientsModule.registerAsync([
 			{
-				name: 'AUTH_PACKAGE',
+				name: AUTH_PACKAGE,
 				useFactory: () => ({
 					transport: Transport.GRPC,
 					options: {
@@ -22,7 +23,7 @@ import { grpcServiceConfig } from '@kirillasyamov/common/configs';
 				}),
 			},
 			{
-				name: 'USER_PACKAGE',
+				name: USER_PACKAGE,
 				useFactory: () => ({
 					transport: Transport.GRPC,
 					options: {
@@ -34,7 +35,7 @@ import { grpcServiceConfig } from '@kirillasyamov/common/configs';
 				}),
 			},
 			{
-				name: 'TOKEN_PACKAGE',
+				name: TOKEN_PACKAGE,
 				useFactory: () => ({
 					transport: Transport.GRPC,
 					options: {
