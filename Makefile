@@ -38,7 +38,18 @@ up-prod:
 	kubectl apply -k k8s/overlays/prod
 	kubectl -n backend rollout restart deployment
 	kubectl wait deployment --all -n backend --for=condition=Available --timeout=5m
+	$(MAKE) lens-sync
 	kubectl -n backend port-forward svc/api-gateway 3001:3001
+
+metrics:
+	minikube addons enable metrics-server
+
+dashboard:
+	minikube dashboard
+
+lens-sync:
+	mkdir -p /mnt/c/Users/kiril/.kube
+	cp -f ~/.kube/config /mnt/c/Users/kiril/.kube/config
 
 build:
 	pnpm build
