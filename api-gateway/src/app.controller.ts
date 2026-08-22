@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { GatewayService } from './app.service';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from './modules/auth/decorators';
+import { SkipThrottle } from '@nestjs/throttler';
 import { AppInfoResponseDto, HealthResponseDto, StatusResponseDto } from './dto';
 
 @ApiTags('App')
@@ -18,6 +19,7 @@ export class GatewayController {
 
 	@Get('health')
 	@Public()
+	@SkipThrottle()
 	@ApiOkResponse({ type: HealthResponseDto })
 	async check(): Promise<HealthResponseDto> {
 		return this.gatewayService.healthCheck();
@@ -25,6 +27,7 @@ export class GatewayController {
 
 	@Get('healthz')
 	@Public()
+	@SkipThrottle()
 	@ApiOkResponse({ type: StatusResponseDto })
 	checkz(): StatusResponseDto {
 		return { status: 'OK' };
