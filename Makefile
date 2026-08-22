@@ -1,8 +1,10 @@
-all: build gen
 
 NPM_PUBLISH_TOKEN := $(shell node --env-file=.env -e "console.log(process.env.NPM_PUBLISH_TOKEN)")
 DOCKER_PUBLISH_TOKEN := $(shell node --env-file=.env -e "console.log(process.env.DOCKER_HUB_PUBLISH_TOKEN)")
 COMMON_PACKAGE_VERSION := $(shell node -p "require('./common/package.json').version")
+
+MICROSERVICES := $(patsubst %/,%,$(filter-out common/,$(sort $(dir $(wildcard */package.json)))))
+IMAGES := $(foreach s,$(MICROSERVICES),kirillasyamov/$(s):latest)
 
 ifeq ($(OS),Windows_NT)
 	MK_PRISMA_DIR_COMMAND := if not exist "common\contracts\generated" mkdir "common\contracts\generated"
@@ -15,8 +17,28 @@ update-common-package-version:
 	yq -i '.catalogs.common."@kirillasyamov/common" = "^$(COMMON_PACKAGE_VERSION)"' pnpm-workspace.yaml
 	pnpm install
 
-dev:
+pull-dev:
+	docker compose pull
+
+pull-prod:
+	minikube image pull $(IMAGES)
+
+down-dev:
+	docker compose down
+
+down-prod:
+	minikube stop
+
+up-dev:
+	docker compose up -d
 	pnpm dev
+
+up-prod:
+	minikube start --driver=docker --cpus=4 --memory=6144 --apiserver-ips=127.0.0.1
+	kubectl apply -k k8s/overlays/prod
+	kubectl -n backend rollout restart deployment
+	kubectl wait deployment --all -n backend --for=condition=Available --timeout=5m
+	kubectl -n backend port-forward svc/api-gateway 3001:3001
 
 build:
 	pnpm build
@@ -84,9 +106,3 @@ publish-docker-%:
 
 cd:
 	gh workflow run cd.yaml --ref $(shell git branch --show-current)
-
-k8s-apply-dev:
-	kubectl apply -k k8s/overlays/dev
-
-k8s-delete-dev:
-	kubectl delete -k k8s/overlays/dev

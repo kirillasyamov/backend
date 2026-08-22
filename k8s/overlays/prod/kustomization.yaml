@@ -4,5 +4,6 @@ kind: Kustomization
 resources:
     - ../../base
 
-patchesStrategicMerge:
-    - patch-replicas.yaml
+patches:
+    - path: patch-replicas.yaml
+    - path: patch-image-pull-policy.yaml
