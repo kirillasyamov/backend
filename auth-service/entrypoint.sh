@@ -13,7 +13,7 @@ SELECT format('CREATE DATABASE %I', 'auth')
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'auth')\gexec
 SQL
 
-node node_modules/.bin/prisma migrate deploy
+./node_modules/.bin/prisma migrate deploy
 
 psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f - <<'SQL'
 INSERT INTO "role" (id, name) VALUES (1, 'user'), (2, 'admin')
