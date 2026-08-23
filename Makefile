@@ -12,6 +12,32 @@ else
 	MK_PRISMA_DIR_COMMAND := mkdir -p ./common/contracts/generated
 endif
 
+.ONESHELL: start-prod pods-rollout
+
+start-prod:
+	@if [ "$$(minikube status --format '{{.Host}}' 2>/dev/null)" = "Running" ]; then
+		echo "Minikube already running"
+	else
+		minikube start --driver=docker --cpus=4 --memory=6144 --apiserver-ips=127.0.0.1
+	fi
+
+pods-rollout:
+	@set -e
+	for d in $(MICROSERVICES); do
+		echo ">>> $$d: waiting for rollout"
+		if ! kubectl -n backend rollout status "deployment/$$d" --timeout=180s; then
+			echo ">>> $$d ROLLOUT FAILED:"
+			kubectl -n backend get pods -l "app=$$d" -o wide || true
+			kubectl -n backend logs "deployment/$$d" --tail=50 --prefix || true
+			exit 1
+		fi
+	done
+
+restart-prod:
+	kubectl apply -k k8s/overlays/prod
+	kubectl -n backend rollout restart deployment $(MICROSERVICES)
+	$(MAKE) pods-rollout
+
 update-common-package-version:
 	node -p "require('./common/package.json').version"
 	yq -i '.catalogs.common."@kirillasyamov/common" = "^$(COMMON_PACKAGE_VERSION)"' pnpm-workspace.yaml
@@ -21,7 +47,16 @@ pull-dev:
 	docker compose pull
 
 pull-prod:
-	minikube image pull $(IMAGES)
+	$(MAKE) start-prod
+	@for img in $(IMAGES); do minikube ssh -- sudo docker pull $$img; done
+	$(MAKE) restart-prod
+
+clean-prod:
+	$(MAKE) start-prod
+	kubectl -n backend delete deployment --ignore-not-found=true $(MICROSERVICES)
+	@sleep 5
+	minikube ssh -- sudo docker image prune -af
+	rm -rf ~/.minikube/cache/images
 
 down-dev:
 	docker compose down
@@ -34,12 +69,13 @@ up-dev:
 	pnpm dev
 
 up-prod:
-	minikube start --driver=docker --cpus=4 --memory=6144 --apiserver-ips=127.0.0.1
+	$(MAKE) start-prod
 	kubectl apply -k k8s/overlays/prod
-	kubectl -n backend rollout restart deployment
-	kubectl wait deployment --all -n backend --for=condition=Available --timeout=5m
+	$(MAKE) restart-prod
 	$(MAKE) lens-sync
-	kubectl -n backend port-forward svc/api-gateway 3001:3001
+
+tunnel-url:
+	@echo "https://$$(kubectl -n backend get configmap backend-config -o jsonpath='{.data.NGROK_DOMAIN}')"
 
 metrics:
 	minikube addons enable metrics-server

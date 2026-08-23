@@ -7,7 +7,6 @@ data:
     GRPC_HOST: '0.0.0.0'
     HOST: '0.0.0.0'
     PORT: '3001'
-    CORS_ORIGIN: 'http://localhost:3000'
     AUTH_SERVICE_URL: 'auth-service:50002'
     USER_SERVICE_URL: 'user-service:50051'
     TOKEN_SERVICE_URL: 'token-service:50004'
@@ -18,3 +17,4 @@ data:
     EXP_DAYS: '30'
     JWT_ISSUER: 'token-service'
     RESET_INTERVAL_MINUTES: '10'
+    CORS_ORIGIN: 'http://localhost:3000 https://envoy-thrill-pester.ngrok-free.dev'

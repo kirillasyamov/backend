@@ -11,7 +11,7 @@ COPY $SERVICE/ ./$SERVICE/
 
 RUN yq -i ".packages = [\"$SERVICE\"]" pnpm-workspace.yaml
 
-RUN pnpm install --no-frozen-lockfile --filter $SERVICE
+RUN pnpm install --frozen-lockfile --filter $SERVICE
 RUN [ -f $SERVICE/prisma/schema.prisma ] && pnpm --filter $SERVICE exec prisma generate || true
 RUN pnpm --filter $SERVICE build
 RUN pnpm deploy --legacy --filter=$SERVICE /deploy
