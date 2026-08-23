@@ -20,4 +20,4 @@ INSERT INTO "role" (id, name) VALUES (1, 'user'), (2, 'admin')
 ON CONFLICT (id) DO NOTHING;
 SQL
 
-exec node --import @swc-node/register/esm-register --enable-source-maps dist/main.js
+exec node --import @swc-node/register/esm-register --enable-source-maps dist/src/main.js
