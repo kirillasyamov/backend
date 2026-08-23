@@ -18,6 +18,7 @@ RUN pnpm deploy --legacy --filter=$SERVICE /deploy
 COPY --chmod=0755 $SERVICE/entrypoint.sh /deploy/entrypoint.sh
 RUN sed -i 's/\r$//' /deploy/entrypoint.sh
 RUN cp -r $SERVICE/dist /deploy/dist
+RUN rm -rf /deploy/prisma && mkdir -p /deploy/prisma
 RUN [ -d $SERVICE/prisma/generated ] && cp -r $SERVICE/prisma/generated /deploy/prisma/generated || true
 RUN [ -f $SERVICE/prisma/schema.prisma ] && cp $SERVICE/prisma/schema.prisma /deploy/prisma/schema.prisma || true
 RUN [ -d $SERVICE/prisma/migrations ] && cp -r $SERVICE/prisma/migrations /deploy/prisma/migrations || true
