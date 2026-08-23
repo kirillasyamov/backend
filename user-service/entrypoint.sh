@@ -15,4 +15,4 @@ SQL
 
 ./node_modules/.bin/prisma migrate deploy
 
-exec node --import @swc-node/register/esm-register --enable-source-maps dist/main.js
+exec node --import @swc-node/register/esm-register --enable-source-maps dist/src/main.js

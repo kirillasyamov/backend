@@ -5,10 +5,10 @@
 	"main": "index.js",
 	"scripts": {
 		"build": "tsc -b",
-		"start": "node --import @swc-node/register/esm-register --enable-source-maps dist/main.js",
+		"start": "node --import @swc-node/register/esm-register --enable-source-maps dist/src/main.js",
 		"start:dev": " node --watch --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
 		"start:debug": "node --watch --inspect --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
-		"start:prod": "node --import @swc-node/register/esm-register --enable-source-maps dist/main.js",
+		"start:prod": "node --import @swc-node/register/esm-register --enable-source-maps dist/src/main.js",
 		"lint": "eslint \"src/**/*.ts\"",
 		"lint:fix": "eslint \"src/**/*.ts\" --fix",
 		"format": "prettier --write \"src/**/*.ts\"",
