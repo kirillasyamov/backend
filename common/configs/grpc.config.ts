@@ -1,3 +1,5 @@
+import { Transport, type ClientsProviderAsyncOptions } from '@nestjs/microservices';
+
 export interface GrpcServiceConfig {
 	port: number;
 	host: string;
@@ -31,3 +33,24 @@ export const grpcServiceConfig: GrpcServiceConfig = {
 		};
 	},
 };
+
+export interface IGrpcClientDescriptor {
+	name: string | symbol;
+	packages: string[];
+	protoPaths: string[];
+	url: string;
+}
+
+export const grpcClients = (descriptors: IGrpcClientDescriptor[]): ClientsProviderAsyncOptions[] =>
+	descriptors.map(({ name, packages, protoPaths, url }) => ({
+		name,
+		useFactory: () => ({
+			transport: Transport.GRPC,
+			options: {
+				package: packages,
+				protoPath: protoPaths,
+				url,
+				channelOptions: grpcServiceConfig.grpcChannelOptions,
+			},
+		}),
+	}));

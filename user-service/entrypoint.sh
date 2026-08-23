@@ -13,6 +13,6 @@ SELECT format('CREATE DATABASE %I', 'user')
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'user')\gexec
 SQL
 
-node node_modules/.bin/prisma migrate deploy
+./node_modules/.bin/prisma migrate deploy
 
-exec node --import @swc-node/register/esm-register --enable-source-maps dist/main.js
+exec node --import @swc-node/register/esm-register --enable-source-maps dist/src/main.js

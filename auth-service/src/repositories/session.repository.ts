@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PRISMA_CLIENT } from '@kirillasyamov/common';
-import { type PrismaClient, Session } from '../prisma/generated/client';
+import { type PrismaClient, Session } from '@prismagen/client';
 
 @Injectable()
 export class SessionRepository {
@@ -16,6 +16,22 @@ export class SessionRepository {
 
 	public async findByRefreshToken(refreshToken: string): Promise<Session | null> {
 		return this.prisma.session.findUnique({ where: { refreshToken } });
+	}
+
+	public async rotate(oldRefreshToken: string, data: { refreshToken: string; expiresAt: Date }): Promise<Session | null> {
+		const result = await this.prisma.session.updateMany({
+			where: { refreshToken: oldRefreshToken, expiresAt: { gt: new Date() } },
+			data,
+		});
+		if (result.count === 0) return null;
+		return this.prisma.session.findUnique({ where: { refreshToken: data.refreshToken } });
+	}
+
+	public async deleteExpiredTokens(refreshToken: string): Promise<number> {
+		const result = await this.prisma.session.deleteMany({
+			where: { refreshToken, expiresAt: { lt: new Date() } },
+		});
+		return result.count;
 	}
 
 	public async findManyByAccountId(accountId: string): Promise<Session[]> {

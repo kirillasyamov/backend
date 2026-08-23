@@ -20,3 +20,33 @@ jobs:
 
             - name: Build and push
               run: docker buildx bake --push
+
+        self-hosted-deploy:
+            needs: publish-docker
+            runs-on: self-hosted
+            steps:
+                - uses: actions/checkout@v4
+
+                - name: Ensure minikube is running
+                  run: minikube start --driver=docker --cpus=4 --memory=6144 --apiserver-ips=127.0.0.1
+
+                - name: Pull fresh images
+                  run: |
+                    for svc in auth-service user-service token-service api-gateway; do
+                        minikube image pull kirillasyamov/$svc:latest
+                    done
+
+                - name: Apply manifests
+                  run: kubectl apply -k k8s/overlays/prod
+
+                - name: Restart deployments
+                  run: |
+                    kubectl -n backend rollout restart deployment
+                    kubectl wait deployment --all -n backend --for=condition=Available --timeout=5m
+
+                - name: Wait for ngrok tunnel
+                  run: kubectl -n backend rollout status deployment/ngrok --timeout=2m
+
+                - name: Verify public endpoint
+                  run: curl -fsS --max-time 15 -H 'ngrok-skip-browser-warning: true' https://envoy-thrill-pester.ngrok-free.dev/healthz
+

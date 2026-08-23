@@ -3,10 +3,9 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule } from '@nestjs/swagger';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { GatewayModule } from './app.module';
+import { API_VERSION } from './gateway.constants';
 
 import { apiGatewayConfig, buildSwaggerConfig } from '@kirillasyamov/common/configs';
-
-const apiVersion = '1.0';
 
 async function bootstrap() {
 	const app = await NestFactory.create(GatewayModule, new FastifyAdapter());
@@ -19,7 +18,7 @@ async function bootstrap() {
 	});
 	app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-	const swaggerDocument = SwaggerModule.createDocument(app, buildSwaggerConfig(apiVersion));
+	const swaggerDocument = SwaggerModule.createDocument(app, buildSwaggerConfig(API_VERSION));
 	SwaggerModule.setup('/docs', app, swaggerDocument, { yamlDocumentUrl: '/docs-yaml' });
 
 	app.enableShutdownHooks();

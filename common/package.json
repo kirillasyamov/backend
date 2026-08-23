@@ -1,7 +1,11 @@
 {
 	"name": "@kirillasyamov/common",
-	"version": "3.0.10",
+	"version": "3.0.17",
 	"description": "Shared contracts, configs, modules and filters for the application",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/kirillasyamov/backend"
+	},
 	"type": "module",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -24,6 +28,14 @@
 			"types": "./dist/filters/index.d.ts",
 			"default": "./dist/filters/index.js"
 		},
+		"./interceptors": {
+			"types": "./dist/interceptors/index.d.ts",
+			"default": "./dist/interceptors/index.js"
+		},
+		"./utils": {
+			"types": "./dist/utils/index.d.ts",
+			"default": "./dist/utils/index.js"
+		},
 		"./modules/*": {
 			"types": "./dist/modules/*.d.ts",
 			"default": "./dist/modules/*.js"
@@ -31,6 +43,10 @@
 		"./enums/*": {
 			"types": "./dist/enums/*.d.ts",
 			"default": "./dist/enums/*.js"
+		},
+		"./contracts": {
+			"types": "./dist/contracts/contracts.constants.d.ts",
+			"default": "./dist/contracts/contracts.constants.js"
 		},
 		"./contracts/generated/*": {
 			"types": "./dist/contracts/generated/*.d.ts",

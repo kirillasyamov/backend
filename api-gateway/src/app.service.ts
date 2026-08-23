@@ -1,20 +1,17 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import type { Observable } from 'rxjs';
-
-interface HealthGrpcClient {
-	check(request: { service: string }): Observable<{ status: number }>;
-}
+import { IHealthGrpcClient } from './interfaces';
+import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE, GRPC_HEALTH_STATUS_SERVING } from './gateway.constants';
 
 @Injectable()
 export class GatewayService {
 	private readonly logger = new Logger(GatewayService.name);
 
 	constructor(
-		@Inject('AUTH_PACKAGE') private authClient: ClientGrpc,
-		@Inject('USER_PACKAGE') private userClient: ClientGrpc,
-		@Inject('TOKEN_PACKAGE') private tokenClient: ClientGrpc,
+		@Inject(AUTH_PACKAGE) private authClient: ClientGrpc,
+		@Inject(USER_PACKAGE) private userClient: ClientGrpc,
+		@Inject(TOKEN_PACKAGE) private tokenClient: ClientGrpc,
 	) {}
 
 	async healthCheck() {
@@ -34,9 +31,11 @@ export class GatewayService {
 
 	private async ping(name: string, client: ClientGrpc): Promise<boolean> {
 		try {
-			const service = client.getService<HealthGrpcClient>('Health');
+			const service = client.getService<IHealthGrpcClient>('Health');
 			const res = await firstValueFrom(service.check({ service: '' }));
-			return res.status === 1;
+			const healthy = res.status === GRPC_HEALTH_STATUS_SERVING;
+			if (healthy) this.logger.debug(`Health check ok for ${name}`);
+			return healthy;
 		} catch (error) {
 			this.logger.warn(`Health check failed for ${name}: ${(error as Error).message}`);
 			return false;

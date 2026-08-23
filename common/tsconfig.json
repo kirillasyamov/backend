@@ -6,9 +6,9 @@
 		"composite": true,
 		"emitDeclarationOnly": true,
 		"paths": {
-			"@/*": ["./modules/*", "./utils/*", "./contracts/*", "./enums/*", "./filters/*"]
+			"@/*": ["./modules/*", "./utils/*", "./contracts/*", "./enums/*", "./filters/*", "./interceptors/*"]
 		},
 		"tsBuildInfoFile": "./dist/.tsbuildinfo"
 	},
-	"include": ["index.ts", "modules/**/*", "utils/**/*", "contracts/**/*", "configs/**/*", "filters/**/*", "enums/**/*"]
+	"include": ["index.ts", "modules/**/*", "utils/**/*", "contracts/**/*", "configs/**/*", "filters/**/*", "interceptors/**/*", "enums/**/*"]
 }

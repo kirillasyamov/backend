@@ -1,51 +1,27 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ClientsModule } from '@nestjs/microservices';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtAuthGuard } from './guards';
 import { authProtoPath, userProtoPath, tokenProtoPath, healthProtoPath } from '@kirillasyamov/common';
-import { grpcServiceConfig } from '@kirillasyamov/common/configs';
+import { AUTH_PROTO_VERSION, USER_PROTO_VERSION, TOKEN_PROTO_VERSION, HEALTH_PROTO_VERSION } from '@kirillasyamov/common/contracts';
+import { grpcClients, grpcServiceConfig } from '@kirillasyamov/common/configs';
+import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE } from '@/gateway.constants';
 
 @Module({
 	imports: [
-		ClientsModule.registerAsync([
-			{
-				name: 'AUTH_PACKAGE',
-				useFactory: () => ({
-					transport: Transport.GRPC,
-					options: {
-						package: ['auth.v1', 'grpc.health.v1'],
-						protoPath: [authProtoPath, healthProtoPath],
-						url: grpcServiceConfig.authServiceUrl,
-						channelOptions: grpcServiceConfig.grpcChannelOptions,
-					},
-				}),
-			},
-			{
-				name: 'USER_PACKAGE',
-				useFactory: () => ({
-					transport: Transport.GRPC,
-					options: {
-						package: ['user.v1', 'grpc.health.v1'],
-						protoPath: [userProtoPath, healthProtoPath],
-						url: grpcServiceConfig.userServiceUrl,
-						channelOptions: grpcServiceConfig.grpcChannelOptions,
-					},
-				}),
-			},
-			{
-				name: 'TOKEN_PACKAGE',
-				useFactory: () => ({
-					transport: Transport.GRPC,
-					options: {
-						package: ['token.v1', 'grpc.health.v1'],
-						protoPath: [tokenProtoPath, healthProtoPath],
-						url: grpcServiceConfig.tokenServiceUrl,
-						channelOptions: grpcServiceConfig.grpcChannelOptions,
-					},
-				}),
-			},
-		]),
+		ClientsModule.registerAsync(
+			grpcClients([
+				{ name: AUTH_PACKAGE, packages: [AUTH_PROTO_VERSION, HEALTH_PROTO_VERSION], protoPaths: [authProtoPath, healthProtoPath], url: grpcServiceConfig.authServiceUrl },
+				{ name: USER_PACKAGE, packages: [USER_PROTO_VERSION, HEALTH_PROTO_VERSION], protoPaths: [userProtoPath, healthProtoPath], url: grpcServiceConfig.userServiceUrl },
+				{
+					name: TOKEN_PACKAGE,
+					packages: [TOKEN_PROTO_VERSION, HEALTH_PROTO_VERSION],
+					protoPaths: [tokenProtoPath, healthProtoPath],
+					url: grpcServiceConfig.tokenServiceUrl,
+				},
+			]),
+		),
 	],
 	controllers: [AuthController],
 	providers: [AuthService, JwtAuthGuard],

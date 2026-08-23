@@ -1,20 +1,21 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { UserService } from './user-service.service';
-import type {
-	CreateUserRequest,
-	CreateUserResponse,
-	GetUserRequest,
-	GetUserResponse,
-	GetUsersRequest,
-	GetUsersResponse,
-	UpdateUserRequest,
-	UpdateUserResponse,
-	DeleteUserRequest,
-	TransferBalanceRequest,
-	TransferBalanceResponse,
+import {
+	UserServiceControllerMethods,
+	type CreateUserRequest,
+	type CreateUserResponse,
+	type GetUserRequest,
+	type GetUserResponse,
+	type GetUsersRequest,
+	type GetUsersResponse,
+	type UpdateUserRequest,
+	type UpdateUserResponse,
+	type DeleteUserRequest,
+	type TransferBalanceRequest,
+	type TransferBalanceResponse,
 } from '@kirillasyamov/common/contracts/generated/user';
-import { UserServiceControllerMethods } from '@kirillasyamov/common/contracts/generated/user';
+import { HEALTH_STATUS_SERVING } from './user-service.constants';
 
 @Controller()
 @UserServiceControllerMethods()
@@ -23,7 +24,7 @@ export class UserController {
 
 	@GrpcMethod('Health', 'Check')
 	public check(): { status: number } {
-		return { status: 1 };
+		return { status: HEALTH_STATUS_SERVING };
 	}
 
 	public async createUser(data: CreateUserRequest): Promise<CreateUserResponse> {

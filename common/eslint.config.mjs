@@ -7,7 +7,7 @@ export default [
 		ignores: ['dist/**', 'coverage/**'],
 	},
 	{
-		files: ['modules/**/*.ts', 'utils/**/*.ts'],
+		files: ['modules/**/*.ts', 'utils/**/*.ts', 'interceptors/**/*.ts'],
 		languageOptions: {
 			parserOptions: {
 				projectService: true,
