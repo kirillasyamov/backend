@@ -37,7 +37,7 @@ jobs:
                     done
 
                 - name: Apply manifests
-                  run: kubectl apply -k k8s/overlays/prod
+                  run: kubectl apply -k .kubernetes/overlays/prod
 
                 - name: Restart deployments
                   run: |

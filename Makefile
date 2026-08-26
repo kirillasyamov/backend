@@ -34,7 +34,7 @@ pods-rollout:
 	done
 
 restart-prod:
-	kubectl apply -k k8s/overlays/prod
+	kubectl apply -k .kubernetes/overlays/prod
 	kubectl -n backend rollout restart deployment $(MICROSERVICES)
 	$(MAKE) pods-rollout
 
@@ -70,7 +70,7 @@ up-dev:
 
 up-prod:
 	$(MAKE) start-prod
-	kubectl apply -k k8s/overlays/prod
+	kubectl apply -k .kubernetes/overlays/prod
 	$(MAKE) restart-prod
 	$(MAKE) lens-sync
 
