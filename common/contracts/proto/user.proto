@@ -13,6 +13,10 @@ service UserService {
 
 	rpc TransferBalance (TransferBalanceRequest) returns (TransferBalanceResponse);
 	rpc ResetBalance (google.protobuf.Empty) returns (google.protobuf.Empty);
+
+	rpc UploadAvatar (UploadAvatarRequest) returns (UploadAvatarResponse);
+	rpc DeleteAvatar (DeleteAvatarRequest) returns (google.protobuf.Empty);
+	rpc GetMostActiveUsers (GetMostActiveUsersRequest) returns (GetMostActiveUsersResponse);
 }
 
 message UserProfileData {
@@ -84,5 +88,48 @@ message TransferBalanceRequest {
 
 message TransferBalanceResponse {
 	string updatedBalance = 1;
+}
+
+message UploadAvatarRequest {
+	string accountId = 1;
+	string mediaKey = 2;
+	optional string fileName = 3;
+	optional uint64 sizeBytes = 4;
+}
+
+message UploadAvatarResponse {
+	string avatarId = 1;
+	string mediaKey = 2;
+}
+
+message DeleteAvatarRequest {
+	string accountId = 1;
+	string avatarId = 2;
+}
+
+message GetMostActiveUsersRequest {
+	optional uint32 minAge = 1;
+	optional uint32 maxAge = 2;
+	uint32 limit = 3;
+	uint32 page = 4;
+}
+
+message GetMostActiveUsersResponse {
+	repeated MostActiveUser users = 1;
+	uint32 total = 2;
+	uint32 page = 3;
+	uint32 limit = 4;
+}
+
+message MostActiveUser {
+	UserProfileData profile = 1;
+	optional AvatarData latestAvatar = 2;
+}
+
+message AvatarData {
+	string avatarId = 1;
+	string mediaKey = 2;
+	optional string mimeType = 3;
+	string createdAt = 4;
 }
 
