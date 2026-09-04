@@ -13,3 +13,5 @@ export * from './redis.scheme';
 export * from './swagger.config';
 export * from './queue.config';
 export * from './queue.scheme';
+export * from './cache.config';
+export * from './cache.scheme';
