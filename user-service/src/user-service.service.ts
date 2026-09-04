@@ -3,8 +3,8 @@ import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { Prisma, User } from '@prismagen/client';
-import { UserRepository } from './repositories';
-import { BALANCE_RESET_QUEUE, BALANCE_RESET_JOB, DEFAULT_PAGE, DEFAULT_LIMIT } from './user-service.constants';
+import { UserRepository, AvatarRepository, MostActiveUserRow } from './repositories';
+import { BALANCE_RESET_QUEUE, BALANCE_RESET_JOB, DEFAULT_PAGE, DEFAULT_LIMIT, MAX_ACTIVE_AVATARS } from './user-service.constants';
 import {
 	UserServiceController as UserServiceControllerInterface,
 	CreateUserRequest,
@@ -18,6 +18,12 @@ import {
 	DeleteUserRequest,
 	TransferBalanceRequest,
 	TransferBalanceResponse,
+	UploadAvatarRequest,
+	UploadAvatarResponse,
+	DeleteAvatarRequest,
+	GetMostActiveUsersRequest,
+	GetMostActiveUsersResponse,
+	MostActiveUser,
 	UserProfileData,
 } from '@kirillasyamov/common/contracts/generated/user';
 import type { Queue } from 'bullmq';
@@ -30,6 +36,7 @@ export class UserService implements UserServiceControllerInterface {
 	private readonly logger = new Logger(UserService.name);
 	constructor(
 		private readonly userRepository: UserRepository,
+		private readonly avatarRepository: AvatarRepository,
 		@InjectQueue(BALANCE_RESET_QUEUE) private readonly balanceResetQueue: Queue,
 		private readonly schedulerRegistry: SchedulerRegistry,
 	) {}
@@ -174,5 +181,83 @@ export class UserService implements UserServiceControllerInterface {
 			setInterval(() => void this.enqueueScheduledReset(), queueConfig.resetIntervalMs),
 		);
 		this.logger.log(`Balance reset restarted (every ${String(queueConfig.resetIntervalMs / 1000)}s)`);
+	}
+
+	public async uploadAvatar(request: UploadAvatarRequest): Promise<UploadAvatarResponse> {
+		if (!request.accountId) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'accountId is required' });
+		if (!request.mediaKey) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'mediaKey is required' });
+
+		const user = await this.userRepository.findById(request.accountId);
+		if (!user) throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
+
+		const activeCount = await this.avatarRepository.countActiveByUser(user.id);
+		if (activeCount >= MAX_ACTIVE_AVATARS) {
+			this.logger.warn(`Avatar upload rejected: active limit reached (userId=${user.id}, active=${String(activeCount)})`);
+			throw new RpcException({
+				code: status.RESOURCE_EXHAUSTED,
+				message: `Active avatar limit reached (max ${String(MAX_ACTIVE_AVATARS)})`,
+			});
+		}
+
+		const avatar = await this.avatarRepository.create(user.id, {
+			mediaKey: request.mediaKey,
+			fileName: request.fileName,
+			sizeBytes: request.sizeBytes,
+		});
+		this.logger.log(`Avatar registered: avatarId=${avatar.id} userId=${user.id} mediaKey=${avatar.mediaKey}`);
+		return { avatarId: avatar.id, mediaKey: avatar.mediaKey };
+	}
+
+	public async deleteAvatar(request: DeleteAvatarRequest): Promise<void> {
+		if (!request.accountId) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'accountId is required' });
+		if (!request.avatarId) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'avatarId is required' });
+
+		const avatar = await this.avatarRepository.findOwnedById(request.accountId, request.avatarId);
+		if (!avatar) throw new RpcException({ code: status.NOT_FOUND, message: 'Avatar not found' });
+
+		await this.avatarRepository.softDelete(request.avatarId);
+		this.logger.log(`Avatar soft-deleted: avatarId=${request.avatarId} accountId=${request.accountId}`);
+	}
+
+	public async getMostActiveUsers(request: GetMostActiveUsersRequest): Promise<GetMostActiveUsersResponse> {
+		if (request.minAge !== undefined && request.maxAge !== undefined && request.minAge > request.maxAge) {
+			throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'minAge must be <= maxAge' });
+		}
+
+		const page = request.page || DEFAULT_PAGE;
+		const limit = request.limit || DEFAULT_LIMIT;
+		const { users, total } = await this.avatarRepository.findMostActiveUsers({
+			minAge: request.minAge,
+			maxAge: request.maxAge,
+			page,
+			limit,
+		});
+
+		return {
+			users: users.map(row => this.adaptMostActiveUser(row)),
+			total,
+			page,
+			limit,
+		};
+	}
+
+	private adaptMostActiveUser(row: MostActiveUserRow): MostActiveUser {
+		const profile: UserProfileData = {
+			login: row.login,
+			email: row.email,
+			age: row.age,
+			bio: row.bio,
+			balance: row.balance.toFixed(2),
+		};
+		const latestAvatar =
+			row.avatarId !== null
+				? {
+						avatarId: row.avatarId,
+						mediaKey: row.avatarMediaKey ?? '',
+						mimeType: row.avatarMimeType ?? undefined,
+						createdAt: row.avatarCreatedAt instanceof Date ? row.avatarCreatedAt.toISOString() : String(row.avatarCreatedAt),
+					}
+				: undefined;
+		return { profile, latestAvatar };
 	}
 }

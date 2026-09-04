@@ -1,7 +1,7 @@
 import { Logger, Module } from '@nestjs/common';
 import { UserController } from './user-service.controller';
 import { UserService } from './user-service.service';
-import { UserRepository } from './repositories';
+import { UserRepository, AvatarRepository } from './repositories';
 import { BALANCE_RESET_QUEUE, BALANCE_RESET_JOB } from './user-service.constants';
 import { PrismaModule, ConfigModule } from '@kirillasyamov/common';
 import { PrismaClient } from '@prismagen/client';
@@ -54,6 +54,6 @@ class BalanceProcessor extends WorkerHost {
 		BullModule.registerQueue({ name: BALANCE_RESET_QUEUE }),
 	],
 	controllers: [UserController],
-	providers: [UserService, UserRepository, BalanceProcessor],
+	providers: [UserService, UserRepository, AvatarRepository, BalanceProcessor],
 })
 export class UserServiceModule {}
