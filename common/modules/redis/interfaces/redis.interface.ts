@@ -1,7 +1,14 @@
 import type { InjectionToken, ModuleMetadata, OptionalFactoryDependency } from '@nestjs/common';
-import type { RedisOptions } from 'ioredis';
 
-export type RedisModuleOptions = RedisOptions;
+export interface RedisModuleOptions {
+	host: string;
+	port: number;
+	password?: string;
+	db?: number;
+	keyPrefix?: string;
+	connectTimeout?: number;
+	enableReadyCheck?: boolean;
+}
 
 export interface RedisModuleAsyncOptions {
 	isGlobal?: boolean;

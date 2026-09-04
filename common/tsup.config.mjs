@@ -22,6 +22,7 @@ export default defineConfig({
 		'modules/redis/redis.lifecycle.ts',
 		'modules/redis/redis.module.ts',
 		'modules/redis/redis.tokens.ts',
+		'modules/redis/redis-stream.interface.ts',
 		'modules/s3-client/index.ts',
 		'modules/s3-client/s3-client.tokens.ts',
 		'modules/s3-client/s3-client.service.ts',
