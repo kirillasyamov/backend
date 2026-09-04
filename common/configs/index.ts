@@ -6,6 +6,8 @@ export * from './grpc.config';
 export * from './grpc.scheme';
 export * from './jwt.config';
 export * from './jwt.scheme';
+export * from './media.config';
+export * from './media.scheme';
 export * from './prisma.config';
 export * from './prisma.scheme';
 export * from './redis.config';
