@@ -3,6 +3,7 @@ import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { Observable, throwError } from 'rxjs';
+import { S3ObjectNotFoundError } from '../modules/s3-client';
 
 const GRPC_STATUS_MAP: Record<string, number> = {
 	P2002: status.ALREADY_EXISTS,
@@ -29,6 +30,11 @@ export class GrpcExceptionFilter {
 
 			this.logger.error(`Prisma ${exception.code}: ${message}`);
 			return throwError(() => ({ code: status.INTERNAL, message: 'Internal database error' }));
+		}
+
+		if (exception instanceof S3ObjectNotFoundError) {
+			this.logger.warn(`S3 object not found: ${exception.message}`);
+			return throwError(() => ({ code: status.NOT_FOUND, message: exception.message }));
 		}
 
 		this.logger.error('Unhandled exception', exception as Error);
