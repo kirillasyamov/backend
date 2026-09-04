@@ -19,6 +19,14 @@ export function CacheGet<TArgs extends any[] = any[]>(options: CacheGetOptions<T
 			return this.cache.get(cacheKey, ttlSeconds, () => originalMethod.apply(this, args));
 		};
 
+		if (typeof Reflect.getMetadataKeys === 'function') {
+			for (const metadataKey of Reflect.getMetadataKeys(originalMethod)) {
+				if (!Reflect.hasMetadata(metadataKey, descriptor.value)) {
+					Reflect.defineMetadata(metadataKey, Reflect.getMetadata(metadataKey, originalMethod), descriptor.value);
+				}
+			}
+		}
+
 		return descriptor;
 	};
 

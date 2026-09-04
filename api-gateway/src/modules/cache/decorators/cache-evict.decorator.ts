@@ -20,6 +20,14 @@ export function CacheEvict(options: CacheEvictOptions): CacheEvictDecorator {
 			return result;
 		};
 
+		if (typeof Reflect.getMetadataKeys === 'function') {
+			for (const metadataKey of Reflect.getMetadataKeys(originalMethod)) {
+				if (!Reflect.hasMetadata(metadataKey, descriptor.value)) {
+					Reflect.defineMetadata(metadataKey, Reflect.getMetadata(metadataKey, originalMethod), descriptor.value);
+				}
+			}
+		}
+
 		return descriptor;
 	};
 
