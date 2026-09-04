@@ -1,6 +1,7 @@
 export const AUTH_PACKAGE = 'AUTH_PACKAGE';
 export const USER_PACKAGE = 'USER_PACKAGE';
 export const TOKEN_PACKAGE = 'TOKEN_PACKAGE';
+export const MEDIA_PACKAGE = 'MEDIA_PACKAGE';
 export const DEFAULT_ROLE_ID = 1;
 export const GRPC_HEALTH_STATUS_SERVING = 1;
 export const DEFAULT_PAGE = 1;
