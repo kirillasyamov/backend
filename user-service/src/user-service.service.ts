@@ -186,10 +186,10 @@ export class UserService implements UserServiceControllerInterface {
 	}
 
 	public async uploadAvatar(request: UploadAvatarRequest): Promise<UploadAvatarResponse> {
-		if (!request.accountId) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'accountId is required' });
+		if (!request.login) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'login is required' });
 		if (!request.mediaKey) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'mediaKey is required' });
 
-		const user = await this.userRepository.findById(request.accountId);
+		const user = await this.userRepository.findByLogin(request.login);
 		if (!user) throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
 
 		const activeCount = await this.avatarRepository.countActiveByUser(user.id);
@@ -211,14 +211,17 @@ export class UserService implements UserServiceControllerInterface {
 	}
 
 	public async deleteAvatar(request: DeleteAvatarRequest): Promise<void> {
-		if (!request.accountId) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'accountId is required' });
+		if (!request.login) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'login is required' });
 		if (!request.avatarId) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'avatarId is required' });
 
-		const avatar = await this.avatarRepository.findOwnedById(request.accountId, request.avatarId);
+		const user = await this.userRepository.findByLogin(request.login);
+		if (!user) throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
+
+		const avatar = await this.avatarRepository.findOwnedById(user.id, request.avatarId);
 		if (!avatar) throw new RpcException({ code: status.NOT_FOUND, message: 'Avatar not found' });
 
 		await this.avatarRepository.softDelete(request.avatarId);
-		this.logger.log(`Avatar soft-deleted: avatarId=${request.avatarId} accountId=${request.accountId}`);
+		this.logger.log(`Avatar soft-deleted: avatarId=${request.avatarId} userId=${user.id}`);
 	}
 
 	public async getMostActiveUsers(request: GetMostActiveUsersRequest): Promise<GetMostActiveUsersResponse> {

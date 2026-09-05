@@ -76,9 +76,9 @@ export class AvatarRepository {
 		return byUser;
 	}
 
-	public async findOwnedById(accountId: string, avatarId: string): Promise<{ userId: string; isActive: boolean } | null> {
+	public async findOwnedById(userId: string, avatarId: string): Promise<{ userId: string; isActive: boolean } | null> {
 		const avatar = await this.prisma.avatar.findFirst({
-			where: { id: avatarId, isActive: true, user: { id: accountId } },
+			where: { id: avatarId, isActive: true, user: { id: userId } },
 			select: { userId: true, isActive: true },
 		});
 		return avatar;

@@ -70,40 +70,53 @@ describe('UserService', () => {
 	});
 
 	it('uploadAvatar rejects when active limit reached', async () => {
-		userRepository.findById.mockResolvedValue({ id: 'usr_1' } as never);
+		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
 		avatarRepository.countActiveByUser.mockResolvedValue(MAX_ACTIVE_AVATARS);
 
-		await expect(service.uploadAvatar({ accountId: 'usr_1', mediaKey: 'avatar/usr_1/f' })).rejects.toMatchObject({
+		await expect(service.uploadAvatar({ login: 'usr_1', mediaKey: 'avatar/usr_1/f' })).rejects.toMatchObject({
 			error: { code: status.RESOURCE_EXHAUSTED },
 		});
 		expect(avatarRepository.create).not.toHaveBeenCalled();
 	});
 
 	it('uploadAvatar registers avatar when under limit', async () => {
-		userRepository.findById.mockResolvedValue({ id: 'usr_1' } as never);
+		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
 		avatarRepository.countActiveByUser.mockResolvedValue(2);
 		avatarRepository.create.mockResolvedValue({ id: 'av_1', mediaKey: 'avatar/usr_1/f' });
 
-		const result = await service.uploadAvatar({ accountId: 'usr_1', mediaKey: 'avatar/usr_1/f' });
+		const result = await service.uploadAvatar({ login: 'usr_1', mediaKey: 'avatar/usr_1/f' });
 
+		expect(userRepository.findByLogin).toHaveBeenCalledWith('usr_1');
 		expect(avatarRepository.create).toHaveBeenCalledWith('usr_1', { mediaKey: 'avatar/usr_1/f', fileName: undefined, sizeBytes: undefined });
 		expect(result).toEqual({ avatarId: 'av_1', mediaKey: 'avatar/usr_1/f' });
 	});
 
+	it('deleteAvatar throws NOT_FOUND when user missing', async () => {
+		userRepository.findByLogin.mockResolvedValue(null);
+
+		await expect(service.deleteAvatar({ login: 'ghost', avatarId: 'av_1' })).rejects.toMatchObject({
+			error: { code: status.NOT_FOUND, message: 'User not found' },
+		});
+		expect(avatarRepository.softDelete).not.toHaveBeenCalled();
+	});
+
 	it('deleteAvatar throws NOT_FOUND when avatar not owned', async () => {
+		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
 		avatarRepository.findOwnedById.mockResolvedValue(null);
 
-		await expect(service.deleteAvatar({ accountId: 'usr_1', avatarId: 'av_1' })).rejects.toMatchObject({
+		await expect(service.deleteAvatar({ login: 'usr_1', avatarId: 'av_1' })).rejects.toMatchObject({
 			error: { code: status.NOT_FOUND, message: 'Avatar not found' },
 		});
 		expect(avatarRepository.softDelete).not.toHaveBeenCalled();
 	});
 
 	it('deleteAvatar soft-deletes owned avatar', async () => {
+		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
 		avatarRepository.findOwnedById.mockResolvedValue({ userId: 'usr_1', isActive: true });
 
-		await service.deleteAvatar({ accountId: 'usr_1', avatarId: 'av_1' });
+		await service.deleteAvatar({ login: 'usr_1', avatarId: 'av_1' });
 
+		expect(avatarRepository.findOwnedById).toHaveBeenCalledWith('usr_1', 'av_1');
 		expect(avatarRepository.softDelete).toHaveBeenCalledWith('av_1');
 	});
 

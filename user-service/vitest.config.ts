@@ -13,8 +13,8 @@ export default defineConfig({
 	],
 	resolve: {
 		alias: [
-			{ find: '@/', replacement: resolve(root, 'src/') },
-			{ find: '@prismagen/', replacement: resolve(root, 'prisma/generated/') },
+			{ find: /^@\/.*/, replacement: resolve(root, 'src') },
+			{ find: /^@prismagen\/(.*)$/, replacement: resolve(root, 'prisma/generated/$1') },
 		],
 	},
 	test: {
