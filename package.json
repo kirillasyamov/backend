@@ -33,7 +33,10 @@
 		"lint-staged": "catalog:development",
 		"@eslint/js": "catalog:development",
 		"eslint-plugin-prettier": "catalog:development",
-		"globals": "catalog:development"
+		"globals": "catalog:development",
+		"@swc/core": "catalog:development",
+		"unplugin-swc": "catalog:test",
+		"vitest": "catalog:test"
 	},
 	"dependencies": {
 		"@grpc/grpc-js": "^1.14.4",

@@ -187,6 +187,9 @@ importers:
       '@eslint/js':
         specifier: catalog:development
         version: 10.0.1(eslint@10.8.0(jiti@2.7.0))
+      '@swc/core':
+        specifier: catalog:development
+        version: 1.15.47
       eslint:
         specifier: catalog:development
         version: 10.8.0(jiti@2.7.0)
@@ -220,6 +223,12 @@ importers:
       typescript-eslint:
         specifier: catalog:development
         version: 8.65.0(eslint@10.8.0(jiti@2.7.0))(typescript@6.0.3)
+      unplugin-swc:
+        specifier: catalog:test
+        version: 1.5.9(@swc/core@1.15.47)(rollup@4.62.4)
+      vitest:
+        specifier: catalog:test
+        version: 4.1.10(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(vite@8.2.0(@types/node@26.1.2)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
 
   api-gateway:
     dependencies:
