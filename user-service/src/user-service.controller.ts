@@ -1,20 +1,26 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { RpcException } from '@nestjs/microservices';
-import { status } from '@grpc/grpc-js';
 import { UserService } from './user-service.service';
-import type {
-	CreateUserRequest,
-	CreateUserResponse,
-	GetUserRequest,
-	GetUserResponse,
-	GetUsersRequest,
-	GetUsersResponse,
-	UpdateUserRequest,
-	UpdateUserResponse,
-	DeleteUserRequest,
-} from 'common/contracts/generated/user';
-import { UserServiceControllerMethods } from 'common/contracts/generated/user';
+import {
+	UserServiceControllerMethods,
+	type CreateUserRequest,
+	type CreateUserResponse,
+	type GetUserRequest,
+	type GetUserResponse,
+	type GetUsersRequest,
+	type GetUsersResponse,
+	type UpdateUserRequest,
+	type UpdateUserResponse,
+	type DeleteUserRequest,
+	type TransferBalanceRequest,
+	type TransferBalanceResponse,
+	type UploadAvatarRequest,
+	type UploadAvatarResponse,
+	type DeleteAvatarRequest,
+	type GetMostActiveUsersRequest,
+	type GetMostActiveUsersResponse,
+} from '@kirillasyamov/common/contracts/generated/user';
+import { HEALTH_STATUS_SERVING } from './user-service.constants';
 
 @Controller()
 @UserServiceControllerMethods()
@@ -22,8 +28,8 @@ export class UserController {
 	constructor(private readonly userService: UserService) {}
 
 	@GrpcMethod('Health', 'Check')
-	public async check(): Promise<{ status: number }> {
-		return { status: 1 };
+	public check(): { status: number } {
+		return { status: HEALTH_STATUS_SERVING };
 	}
 
 	public async createUser(data: CreateUserRequest): Promise<CreateUserResponse> {
@@ -44,5 +50,25 @@ export class UserController {
 
 	public async deleteUser(data: DeleteUserRequest): Promise<void> {
 		return this.userService.deleteUser(data);
+	}
+
+	public async transferBalance(data: TransferBalanceRequest): Promise<TransferBalanceResponse> {
+		return this.userService.transferBalance(data);
+	}
+
+	public async resetBalance(): Promise<void> {
+		return this.userService.resetBalance();
+	}
+
+	public async uploadAvatar(data: UploadAvatarRequest): Promise<UploadAvatarResponse> {
+		return this.userService.uploadAvatar(data);
+	}
+
+	public async deleteAvatar(data: DeleteAvatarRequest): Promise<void> {
+		return this.userService.deleteAvatar(data);
+	}
+
+	public async getMostActiveUsers(data: GetMostActiveUsersRequest): Promise<GetMostActiveUsersResponse> {
+		return this.userService.getMostActiveUsers(data);
 	}
 }

@@ -1,6 +1,6 @@
 {
 	"name": "monorepo",
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"description": "",
 	"main": "index.js",
 	"scripts": {
@@ -11,7 +11,11 @@
 		"lint:fix": "eslint . --fix",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
-		"gen": "protoc -I ./common/contracts/proto ./common/contracts/proto/*.proto --ts_proto_out=./common/contracts/generated --ts_proto_opt=nestJs=true,lowerCaseServiceMethods=true,package=omit"
+		"test": "pnpm -r --parallel run test",
+		"test:coverage": "pnpm -r --parallel run test:coverage",
+		"gen": "protoc -I ./common/contracts/proto ./common/contracts/proto/*.proto --ts_proto_out=./common/contracts/generated --ts_proto_opt=nestJs=true,lowerCaseServiceMethods=true,package=omit",
+		"prepare": "husky install",
+		"pre-commit": "lint-staged --no-stash"
 	},
 	"keywords": [],
 	"author": "kirillasyamov",
@@ -24,10 +28,26 @@
 		"protoc": "catalog:development",
 		"ts-proto": "catalog:development",
 		"typescript": "catalog:development",
-		"typescript-eslint": "catalog:development"
+		"typescript-eslint": "catalog:development",
+		"husky": "catalog:development",
+		"lint-staged": "catalog:development",
+		"@eslint/js": "catalog:development",
+		"eslint-plugin-prettier": "catalog:development",
+		"globals": "catalog:development",
+		"@swc/core": "catalog:development",
+		"unplugin-swc": "catalog:test",
+		"vitest": "catalog:test"
 	},
 	"dependencies": {
 		"@grpc/grpc-js": "^1.14.4",
 		"@grpc/proto-loader": "^0.8.1"
+	},
+	"lint-staged": {
+		"**/*.{js,jsx,ts,tsx}": [
+			"eslint --quiet --fix"
+		],
+		"**/*.{json,js,ts,jsx,tsx}": [
+			"prettier --write --ignore-unknown"
+		]
 	}
 }

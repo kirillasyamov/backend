@@ -4,12 +4,12 @@
 		"outDir": "./dist",
 		"rootDir": ".",
 		"composite": true,
+		"types": ["node", "vitest/globals"],
 		"paths": {
 			"@/*": ["./src/*"],
-			"common/*": ["../common/*"]
+			"@prismagen/*": ["./prisma/generated/*"]
 		},
 		"tsBuildInfoFile": "./dist/.tsbuildinfo"
 	},
-	"include": ["src/**/*", "prisma/**/*.ts", "../common/**/*"],
-	"references": [{ "path": "../common" }]
+	"include": ["src/**/*", "prisma/**/*.ts"]
 }

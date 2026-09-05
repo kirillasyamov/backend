@@ -10,6 +10,13 @@ service UserService {
   	rpc GetUsers (GetUsersRequest) returns (GetUsersResponse);
   	rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse);
 	rpc DeleteUser (DeleteUserRequest) returns (google.protobuf.Empty);
+
+	rpc TransferBalance (TransferBalanceRequest) returns (TransferBalanceResponse);
+	rpc ResetBalance (google.protobuf.Empty) returns (google.protobuf.Empty);
+
+	rpc UploadAvatar (UploadAvatarRequest) returns (UploadAvatarResponse);
+	rpc DeleteAvatar (DeleteAvatarRequest) returns (google.protobuf.Empty);
+	rpc GetMostActiveUsers (GetMostActiveUsersRequest) returns (GetMostActiveUsersResponse);
 }
 
 message UserProfileData {
@@ -17,10 +24,15 @@ message UserProfileData {
 	string email = 2;
 	uint32 age = 3;
 	string bio = 4;
+	string balance = 5;
+	repeated string avatars = 6;
 }
 
 message CreateUserRequest {
-	UserProfileData userProfile = 1;
+	string login = 1;
+	string email = 2;
+	uint32 age = 3;
+	string bio = 4;
 }
 
 message CreateUserResponse {
@@ -67,3 +79,58 @@ message DeleteUserRequest {
 		string login = 2;
 	}
 }
+
+message TransferBalanceRequest {
+	string idempotencyKey = 1;
+	string senderLogin = 2;
+	string recipientLogin = 3;
+	string amount = 4;
+}
+
+message TransferBalanceResponse {
+	string updatedBalance = 1;
+}
+
+message UploadAvatarRequest {
+	string login = 1;
+	string mediaKey = 2;
+	optional string fileName = 3;
+	optional uint64 sizeBytes = 4;
+}
+
+message UploadAvatarResponse {
+	string avatarId = 1;
+	string mediaKey = 2;
+}
+
+message DeleteAvatarRequest {
+	string login = 1;
+	string avatarId = 2;
+}
+
+message GetMostActiveUsersRequest {
+	optional uint32 minAge = 1;
+	optional uint32 maxAge = 2;
+	uint32 limit = 3;
+	uint32 page = 4;
+}
+
+message GetMostActiveUsersResponse {
+	repeated MostActiveUser users = 1;
+	uint32 total = 2;
+	uint32 page = 3;
+	uint32 limit = 4;
+}
+
+message MostActiveUser {
+	UserProfileData profile = 1;
+	optional AvatarData latestAvatar = 2;
+}
+
+message AvatarData {
+	string avatarId = 1;
+	string mediaKey = 2;
+	optional string mimeType = 3;
+	string createdAt = 4;
+}
+

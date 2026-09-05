@@ -1,0 +1,19 @@
+model Avatar {
+	id        String @id @default(nanoid())
+	userId    String
+	user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	mediaKey  String
+	mimeType  String?
+	sizeBytes Int?
+
+	isActive  Boolean  @default(true)
+	deletedAt DateTime?
+
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	@@index([userId, isActive])
+	@@index([userId, createdAt])
+	@@map("avatar")
+}

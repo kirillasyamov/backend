@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+cmd //c "chcp 65001 >nul 2>&1"
+pnpm pre-commit

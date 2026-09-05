@@ -1,13 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { OnApplicationShutdown } from '@nestjs/common';
-import type Redis from 'ioredis';
+import type { RedisClient } from './interfaces';
 import { REDIS_CLIENT } from './redis.tokens';
 
 @Injectable()
 export class RedisLifecycle implements OnApplicationShutdown {
 	private readonly logger = new Logger(RedisLifecycle.name);
 
-	constructor(@Inject(REDIS_CLIENT) private readonly client: Redis) {}
+	constructor(@Inject(REDIS_CLIENT) private readonly client: RedisClient) {}
 
 	async onApplicationShutdown(): Promise<void> {
 		this.logger.log('Disconnecting from Redis');
