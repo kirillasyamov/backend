@@ -101,6 +101,8 @@ export class UserService implements OnModuleInit {
 		uploadFields: Record<string, string>;
 		expiresAt: string;
 	}> {
+		const { login } = await this.callGrpc('AuthService', 'getAccountById', async () => firstValueFrom(this.authGrpcService.getAccountById({ id: accountId })));
+
 		const mediaUrl = await this.callGrpc('MediaService', 'requestUploadUrl', async () =>
 			firstValueFrom(
 				this.mediaGrpcService.requestUploadUrl({ purpose: 'avatar', ownerAccountId: accountId, filename: request.fileName, sizeBytes: request.sizeBytes, metadata: {} }),
@@ -108,14 +110,15 @@ export class UserService implements OnModuleInit {
 		);
 
 		const avatar = await this.callGrpc('UserService', 'uploadAvatar', async () =>
-			firstValueFrom(this.userGrpcService.uploadAvatar({ accountId, mediaKey: mediaUrl.key, fileName: request.fileName, sizeBytes: request.sizeBytes })),
+			firstValueFrom(this.userGrpcService.uploadAvatar({ login, mediaKey: mediaUrl.key, fileName: request.fileName, sizeBytes: request.sizeBytes })),
 		);
 
 		return this.composeUploadAvatar(mediaUrl, avatar);
 	}
 
 	public async deleteAvatar(accountId: string, avatarId: string): Promise<void> {
-		await this.callGrpc('UserService', 'deleteAvatar', async () => firstValueFrom(this.userGrpcService.deleteAvatar({ accountId, avatarId })));
+		const { login } = await this.callGrpc('AuthService', 'getAccountById', async () => firstValueFrom(this.authGrpcService.getAccountById({ id: accountId })));
+		await this.callGrpc('UserService', 'deleteAvatar', async () => firstValueFrom(this.userGrpcService.deleteAvatar({ login, avatarId })));
 	}
 
 	public async getMostActiveUsers(page: number, limit: number, minAge?: number, maxAge?: number): Promise<GetMostActiveUsersResponse> {
