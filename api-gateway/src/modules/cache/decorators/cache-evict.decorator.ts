@@ -20,6 +20,8 @@ export function CacheEvict(options: CacheEvictOptions): CacheEvictDecorator {
 			return result;
 		};
 
+		Object.defineProperty(descriptor.value, 'name', { value: String(propertyKey) });
+
 		if (typeof Reflect.getMetadataKeys === 'function') {
 			for (const metadataKey of Reflect.getMetadataKeys(originalMethod)) {
 				if (!Reflect.hasMetadata(metadataKey, descriptor.value)) {
