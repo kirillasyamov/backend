@@ -38,17 +38,31 @@ describe('UserService', () => {
 		expect(userRepository.findByLogin).toHaveBeenCalledWith('ghost');
 	});
 
+	it('getUser returns profile with active avatar media keys', async () => {
+		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1', login: 'alice', email: 'a@b.com', age: 30, bio: 'hi', balance: { toFixed: () => '5.00' } } as never);
+		avatarRepository.findActiveMediaKeysByUserId.mockResolvedValue(['avatar/usr_1/f1', 'avatar/usr_1/f2']);
+
+		const result = await service.getUser({ login: 'alice' });
+
+		expect(avatarRepository.findActiveMediaKeysByUserId).toHaveBeenCalledWith('usr_1');
+		expect(result).toEqual({
+			userProfile: { login: 'alice', email: 'a@b.com', age: 30, bio: 'hi', balance: '5.00', avatars: ['avatar/usr_1/f1', 'avatar/usr_1/f2'] },
+		});
+	});
+
 	it('getUsers returns mapped users with pagination defaults', async () => {
 		userRepository.findAll.mockResolvedValue({
-			users: [{ login: 'alice', email: 'a@b.com', age: 30, bio: 'hi', balance: { toFixed: () => '0.00' } } as never],
+			users: [{ id: 'usr_1', login: 'alice', email: 'a@b.com', age: 30, bio: 'hi', balance: { toFixed: () => '0.00' } } as never],
 			total: 1,
 		});
+		avatarRepository.findActiveMediaKeysByUserIds.mockResolvedValue(new Map([['usr_1', ['avatar/usr_1/f']]]));
 
 		const result = await service.getUsers({ page: 0, limit: 0 });
 
 		expect(userRepository.findAll).toHaveBeenCalledWith(1, 10);
+		expect(avatarRepository.findActiveMediaKeysByUserIds).toHaveBeenCalledWith(['usr_1']);
 		expect(result).toEqual({
-			users: [{ login: 'alice', email: 'a@b.com', age: 30, bio: 'hi', balance: '0.00' }],
+			users: [{ login: 'alice', email: 'a@b.com', age: 30, bio: 'hi', balance: '0.00', avatars: ['avatar/usr_1/f'] }],
 			total: 1,
 			page: 1,
 			limit: 10,
@@ -115,7 +129,7 @@ describe('UserService', () => {
 		const result = await service.getMostActiveUsers({ minAge: 20, maxAge: 40, page: 1, limit: 10 });
 
 		expect(avatarRepository.findMostActiveUsers).toHaveBeenCalledWith({ minAge: 20, maxAge: 40, page: 1, limit: 10 });
-		expect(result.users[0]?.profile).toEqual({ login: 'alice', email: 'a@b.com', age: 30, bio: 'hi', balance: '5.00' });
+		expect(result.users[0]?.profile).toEqual({ login: 'alice', email: 'a@b.com', age: 30, bio: 'hi', balance: '5.00', avatars: [] });
 		expect(result.users[0]?.latestAvatar).toEqual({
 			avatarId: 'av_1',
 			mediaKey: 'avatar/usr_1/f',

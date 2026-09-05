@@ -46,6 +46,36 @@ export class AvatarRepository {
 		return { id: avatar.id, mediaKey: avatar.mediaKey };
 	}
 
+	public async findActiveMediaKeysByUserId(userId: string): Promise<string[]> {
+		const avatars = await this.prisma.avatar.findMany({
+			where: { userId, isActive: true },
+			select: { mediaKey: true },
+			orderBy: { createdAt: 'desc' },
+		});
+		return avatars.map(avatar => avatar.mediaKey);
+	}
+
+	public async findActiveMediaKeysByUserIds(userIds: string[]): Promise<Map<string, string[]>> {
+		if (userIds.length === 0) return new Map();
+
+		const avatars = await this.prisma.avatar.findMany({
+			where: { userId: { in: userIds }, isActive: true },
+			select: { userId: true, mediaKey: true },
+			orderBy: { createdAt: 'desc' },
+		});
+
+		const byUser = new Map<string, string[]>();
+		for (const avatar of avatars) {
+			const existing = byUser.get(avatar.userId);
+			if (existing) {
+				existing.push(avatar.mediaKey);
+			} else {
+				byUser.set(avatar.userId, [avatar.mediaKey]);
+			}
+		}
+		return byUser;
+	}
+
 	public async findOwnedById(accountId: string, avatarId: string): Promise<{ userId: string; isActive: boolean } | null> {
 		const avatar = await this.prisma.avatar.findFirst({
 			where: { id: avatarId, isActive: true, user: { id: accountId } },

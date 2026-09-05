@@ -41,8 +41,8 @@ export class UserService implements UserServiceControllerInterface {
 		private readonly schedulerRegistry: SchedulerRegistry,
 	) {}
 
-	private adaptToProfile(user: User): UserProfileData {
-		return { login: user.login, email: user.email, age: user.age, bio: user.bio, balance: user.balance.toFixed(2) };
+	private adaptToProfile(user: User, avatars: string[] = []): UserProfileData {
+		return { login: user.login, email: user.email, age: user.age, bio: user.bio, balance: user.balance.toFixed(2), avatars };
 	}
 
 	public async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
@@ -76,15 +76,17 @@ export class UserService implements UserServiceControllerInterface {
 		const user = await this.userRepository.findByLogin(login);
 		if (!user) throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
 
-		return { userProfile: { login: user.login, email: user.email, age: user.age, bio: user.bio, balance: user.balance.toFixed(2) } };
+		const avatars = await this.avatarRepository.findActiveMediaKeysByUserId(user.id);
+		return { userProfile: this.adaptToProfile(user, avatars) };
 	}
 
 	public async getUsers(request: GetUsersRequest): Promise<GetUsersResponse> {
 		const page = request.page || DEFAULT_PAGE;
 		const limit = request.limit || DEFAULT_LIMIT;
 		const { users, total } = await this.userRepository.findAll(page, limit);
+		const avatarsByUser = await this.avatarRepository.findActiveMediaKeysByUserIds(users.map(user => user.id));
 		return {
-			users: users.map(u => this.adaptToProfile(u)),
+			users: users.map(user => this.adaptToProfile(user, avatarsByUser.get(user.id) ?? [])),
 			total,
 			page,
 			limit,
@@ -248,6 +250,7 @@ export class UserService implements UserServiceControllerInterface {
 			age: row.age,
 			bio: row.bio,
 			balance: row.balance.toFixed(2),
+			avatars: [],
 		};
 		const latestAvatar =
 			row.avatarId !== null
