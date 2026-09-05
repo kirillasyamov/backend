@@ -32,12 +32,12 @@ jobs:
 
                 - name: Pull fresh images
                   run: |
-                    for svc in auth-service user-service token-service api-gateway; do
+                    for svc in auth-service user-service token-service api-gateway media-service; do
                         minikube image pull kirillasyamov/$svc:latest
                     done
 
                 - name: Apply manifests
-                  run: kubectl apply -k k8s/overlays/prod
+                  run: kubectl apply -k .kubernetes/overlays/prod
 
                 - name: Restart deployments
                   run: |

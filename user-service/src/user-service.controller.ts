@@ -14,6 +14,11 @@ import {
 	type DeleteUserRequest,
 	type TransferBalanceRequest,
 	type TransferBalanceResponse,
+	type UploadAvatarRequest,
+	type UploadAvatarResponse,
+	type DeleteAvatarRequest,
+	type GetMostActiveUsersRequest,
+	type GetMostActiveUsersResponse,
 } from '@kirillasyamov/common/contracts/generated/user';
 import { HEALTH_STATUS_SERVING } from './user-service.constants';
 
@@ -53,5 +58,17 @@ export class UserController {
 
 	public async resetBalance(): Promise<void> {
 		return this.userService.resetBalance();
+	}
+
+	public async uploadAvatar(data: UploadAvatarRequest): Promise<UploadAvatarResponse> {
+		return this.userService.uploadAvatar(data);
+	}
+
+	public async deleteAvatar(data: DeleteAvatarRequest): Promise<void> {
+		return this.userService.deleteAvatar(data);
+	}
+
+	public async getMostActiveUsers(data: GetMostActiveUsersRequest): Promise<GetMostActiveUsersResponse> {
+		return this.userService.getMostActiveUsers(data);
 	}
 }

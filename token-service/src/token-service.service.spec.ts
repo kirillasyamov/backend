@@ -1,16 +1,15 @@
 import { Test } from '@nestjs/testing';
 import { mockDeep } from 'vitest-mock-extended';
-import type Redis from 'ioredis';
-import { REDIS_CLIENT } from '@kirillasyamov/common';
+import { REDIS_CLIENT, type RedisClient } from '@kirillasyamov/common';
 import { TokenService } from './token-service.service';
 import { BlacklistService } from './modules/blacklist/blacklist.service';
 
 describe('TokenService', () => {
 	let service: TokenService;
-	let redis: ReturnType<typeof mockDeep<Redis>>;
+	let redis: ReturnType<typeof mockDeep<RedisClient>>;
 
 	beforeEach(async () => {
-		redis = mockDeep<Redis>();
+		redis = mockDeep<RedisClient>();
 		const moduleRef = await Test.createTestingModule({
 			providers: [TokenService, BlacklistService, { provide: REDIS_CLIENT, useValue: redis }],
 		}).compile();

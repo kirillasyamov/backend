@@ -4,15 +4,16 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { GatewayController } from './app.controller';
 import { GatewayService } from './app.service';
 import { ConfigModule } from '@kirillasyamov/common';
-import { apiGatewaySchema, authSchema } from '@kirillasyamov/common/configs';
+import { apiGatewaySchema, authSchema, cacheSchema } from '@kirillasyamov/common/configs';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { CacheModule } from './modules/cache/cache.module';
 import { GrpcToHttpExceptionFilter } from '@kirillasyamov/common/filters';
 import { LoggingInterceptor } from '@kirillasyamov/common/interceptors';
 import { JwtAuthGuard, RolesGuard } from './modules/auth/guards';
 
 @Module({
-	imports: [ConfigModule.forRoot(apiGatewaySchema, authSchema), ThrottlerModule.forRoot([{ ttl: 60000, limit: 5 }]), AuthModule, UserModule],
+	imports: [ConfigModule.forRoot(apiGatewaySchema, authSchema, cacheSchema), ThrottlerModule.forRoot([{ ttl: 60000, limit: 5 }]), AuthModule, UserModule, CacheModule],
 	controllers: [GatewayController],
 	providers: [
 		GatewayService,

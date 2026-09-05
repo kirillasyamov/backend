@@ -30,6 +30,13 @@ target "api-gateway" {
 	tags = ["${REGISTRY}/api-gateway:latest"]
 }
 
+target "media-service" {
+	context = "."
+	dockerfile = "Dockerfile.service"
+	args = { SERVICE = "media-service" }
+	tags = ["${REGISTRY}/media-service:latest"]
+}
+
 group "default" {
- 	targets = ["auth-service", "user-service", "token-service", "api-gateway"]
+ 	targets = ["auth-service", "user-service", "token-service", "api-gateway", "media-service"]
 }

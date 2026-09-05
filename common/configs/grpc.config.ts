@@ -6,6 +6,7 @@ export interface GrpcServiceConfig {
 	authServiceUrl: string;
 	userServiceUrl: string;
 	tokenServiceUrl: string;
+	mediaServiceUrl: string;
 	grpcChannelOptions: Record<string, unknown>;
 }
 
@@ -24,6 +25,9 @@ export const grpcServiceConfig: GrpcServiceConfig = {
 	},
 	get tokenServiceUrl() {
 		return process.env.TOKEN_SERVICE_URL ?? 'localhost:50004';
+	},
+	get mediaServiceUrl() {
+		return process.env.MEDIA_SERVICE_URL ?? 'localhost:50006';
 	},
 	get grpcChannelOptions() {
 		return {
@@ -51,6 +55,7 @@ export const grpcClients = (descriptors: IGrpcClientDescriptor[]): ClientsProvid
 				protoPath: protoPaths,
 				url,
 				channelOptions: grpcServiceConfig.grpcChannelOptions,
+				loader: { defaults: true, arrays: true },
 			},
 		}),
 	}));

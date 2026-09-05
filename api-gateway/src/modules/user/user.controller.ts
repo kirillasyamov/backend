@@ -2,6 +2,8 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../auth/decorators';
+import { CacheEvict, CacheGet } from '../cache/decorators';
+import { CacheService } from '../cache/cache.service';
 import { CreateUserRequestDto, UpdateUserRequestDto, CreateUserResponseDto, GetUserResponseDto, GetUsersResponseDto } from './dto';
 import { UserService } from './user.service';
 import { DEFAULT_PAGE, DEFAULT_LIMIT } from '@/gateway.constants';
@@ -9,12 +11,16 @@ import { DEFAULT_PAGE, DEFAULT_LIMIT } from '@/gateway.constants';
 @ApiTags('User')
 @Controller('user')
 export class UserController {
-	constructor(private readonly userService: UserService) {}
+	constructor(
+		private readonly userService: UserService,
+		private readonly cache: CacheService,
+	) {}
 
 	@ApiBearerAuth()
 	@ApiOperation({ summary: 'Create user profile' })
 	@ApiBody({ type: CreateUserRequestDto })
 	@ApiOkResponse({ type: CreateUserResponseDto })
+	@CacheEvict({ prefix: 'users:' })
 	@Post()
 	@HttpCode(HttpStatus.CREATED)
 	public async createUser(@CurrentUser('sub') accountId: string, @Body() dto: CreateUserRequestDto) {
@@ -25,6 +31,7 @@ export class UserController {
 	@ApiOperation({ summary: 'Update user profile' })
 	@ApiBody({ type: UpdateUserRequestDto })
 	@ApiOkResponse({ type: GetUserResponseDto })
+	@CacheEvict({ prefix: 'users:' })
 	@Patch()
 	@HttpCode(HttpStatus.OK)
 	public async updateUser(@CurrentUser('sub') accountId: string, @Body() dto: UpdateUserRequestDto) {
@@ -33,6 +40,7 @@ export class UserController {
 
 	@ApiBearerAuth()
 	@ApiOperation({ summary: 'Delete user profile' })
+	@CacheEvict({ prefix: 'users:' })
 	@Delete()
 	@HttpCode(HttpStatus.NO_CONTENT)
 	public async deleteUser(@CurrentUser('sub') accountId: string): Promise<void> {
@@ -53,6 +61,7 @@ export class UserController {
 	@ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
 	@ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
 	@ApiOkResponse({ type: GetUsersResponseDto })
+	@CacheGet({ keyResolver: (page: number, limit: number) => `users:list:${String(page)}:${String(limit)}` })
 	@Get('all')
 	@HttpCode(HttpStatus.OK)
 	public async getUsers(@Query('page') page = DEFAULT_PAGE, @Query('limit') limit = DEFAULT_LIMIT): Promise<GetUsersResponseDto> {
@@ -62,6 +71,7 @@ export class UserController {
 	@ApiBearerAuth()
 	@ApiOperation({ summary: 'Read user profile by login' })
 	@ApiOkResponse({ type: GetUserResponseDto })
+	@CacheGet({ keyResolver: (login: string) => `users:by-login:${login}` })
 	@Get(':login')
 	@HttpCode(HttpStatus.OK)
 	public async getUser(@Param('login') login: string) {

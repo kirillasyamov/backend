@@ -42,6 +42,10 @@ export class UserRepository {
 		return this.prisma.user.findFirst({ where: { login, deletedAt: null } });
 	}
 
+	public async findById(id: string): Promise<User | null> {
+		return this.prisma.user.findFirst({ where: { id, deletedAt: null } });
+	}
+
 	public async update(login: string, data: { age?: number; bio?: string }): Promise<User> {
 		return this.prisma.user.update({ where: { login }, data });
 	}
