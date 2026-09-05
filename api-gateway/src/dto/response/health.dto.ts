@@ -17,4 +17,7 @@ export class HealthResponseDto {
 
 	@ApiProperty({ type: ServiceHealthDto })
 	'token-service'!: ServiceHealthDto;
+
+	@ApiProperty({ type: ServiceHealthDto })
+	'media-service'!: ServiceHealthDto;
 }

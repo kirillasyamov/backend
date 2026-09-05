@@ -17,10 +17,10 @@ export class AvatarController {
 	) {}
 
 	@ApiBearerAuth()
-	@ApiOperation({ summary: 'Upload avatar (presigned POST via media-service)' })
+	@ApiOperation({ summary: 'Upload avatar' })
 	@ApiBody({ type: UploadAvatarRequestDto })
 	@ApiOkResponse({ type: UploadAvatarResponseDto })
-	@CacheEvict({ prefix: 'users:most-active' })
+	@CacheEvict({ prefix: 'users:' })
 	@Post('avatar')
 	@HttpCode(HttpStatus.CREATED)
 	public async uploadAvatar(@CurrentUser('sub') accountId: string, @Body() dto: UploadAvatarRequestDto): Promise<UploadAvatarResponseDto> {
@@ -28,9 +28,9 @@ export class AvatarController {
 	}
 
 	@ApiBearerAuth()
-	@ApiOperation({ summary: 'Delete avatar (soft delete)' })
+	@ApiOperation({ summary: 'Delete avatar' })
 	@ApiParam({ name: 'avatarId', type: String })
-	@CacheEvict({ prefix: 'users:most-active' })
+	@CacheEvict({ prefix: 'users:' })
 	@Delete('avatar/:avatarId')
 	@HttpCode(HttpStatus.NO_CONTENT)
 	public async deleteAvatar(@CurrentUser('sub') accountId: string, @Param('avatarId') avatarId: string): Promise<void> {

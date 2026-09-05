@@ -15,4 +15,7 @@ export class UserProfileResponseDto {
 
 	@ApiProperty({ example: '42.00' })
 	balance!: string;
+
+	@ApiProperty({ type: [String], example: ['avatar/acct/550e8400...'], description: 'Media keys of the user avatars' })
+	avatars!: string[];
 }

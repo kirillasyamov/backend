@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { IHealthGrpcClient } from './interfaces';
-import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE, GRPC_HEALTH_STATUS_SERVING } from './gateway.constants';
+import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE, MEDIA_PACKAGE, GRPC_HEALTH_STATUS_SERVING } from './gateway.constants';
 
 @Injectable()
 export class GatewayService {
@@ -12,13 +12,15 @@ export class GatewayService {
 		@Inject(AUTH_PACKAGE) private authClient: ClientGrpc,
 		@Inject(USER_PACKAGE) private userClient: ClientGrpc,
 		@Inject(TOKEN_PACKAGE) private tokenClient: ClientGrpc,
+		@Inject(MEDIA_PACKAGE) private mediaClient: ClientGrpc,
 	) {}
 
 	async healthCheck() {
-		const [authHealth, userHealth, tokenHealth] = await Promise.all([
+		const [authHealth, userHealth, tokenHealth, mediaHealth] = await Promise.all([
 			this.ping('auth-service', this.authClient),
 			this.ping('user-service', this.userClient),
 			this.ping('token-service', this.tokenClient),
+			this.ping('media-service', this.mediaClient),
 		]);
 
 		return {
@@ -26,6 +28,7 @@ export class GatewayService {
 			'auth-service': { health: authHealth },
 			'user-service': { health: userHealth },
 			'token-service': { health: tokenHealth },
+			'media-service': { health: mediaHealth },
 		};
 	}
 

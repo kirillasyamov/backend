@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { GatewayService } from './app.service';
 import type { IHealthGrpcClient } from './interfaces';
-import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE } from './gateway.constants';
+import { AUTH_PACKAGE, USER_PACKAGE, TOKEN_PACKAGE, MEDIA_PACKAGE } from './gateway.constants';
 
 const mockGrpcClient = (status: number): ClientGrpc => {
 	const health = mockDeep<IHealthGrpcClient>();
@@ -20,6 +20,7 @@ describe('GatewayService', () => {
 				{ provide: AUTH_PACKAGE, useValue: mockGrpcClient(1) },
 				{ provide: USER_PACKAGE, useValue: mockGrpcClient(1) },
 				{ provide: TOKEN_PACKAGE, useValue: mockGrpcClient(1) },
+				{ provide: MEDIA_PACKAGE, useValue: mockGrpcClient(1) },
 			],
 		}).compile();
 		const service = moduleRef.get(GatewayService);
@@ -31,6 +32,7 @@ describe('GatewayService', () => {
 			'auth-service': { health: true },
 			'user-service': { health: true },
 			'token-service': { health: true },
+			'media-service': { health: true },
 		});
 	});
 
@@ -42,6 +44,7 @@ describe('GatewayService', () => {
 				{ provide: AUTH_PACKAGE, useValue: mockGrpcClient(1) },
 				{ provide: USER_PACKAGE, useValue: mockGrpcClient(1) },
 				{ provide: TOKEN_PACKAGE, useValue: tokenClient },
+				{ provide: MEDIA_PACKAGE, useValue: mockGrpcClient(1) },
 			],
 		}).compile();
 		const service = moduleRef.get(GatewayService);
