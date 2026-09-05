@@ -29,3 +29,11 @@ metadata:
     namespace: backend
 spec:
     replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: media-service
+    namespace: backend
+spec:
+    replicas: 1

@@ -5,4 +5,4 @@ resources:
     - ../../base
 
 patchesStrategicMerge:
-    - patch-replicas.yaml
+    - patch-image-pull-policy.yaml

@@ -12,6 +12,9 @@
 		},
 		{
 			"path": "token-service/tsconfig.json"
+		},
+		{
+			"path": "media-service/tsconfig.json"
 		}
 	]
 }

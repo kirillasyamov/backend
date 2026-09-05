@@ -140,6 +140,51 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+    name: media-service
+    namespace: backend
+    labels:
+        app: media-service
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: media-service
+    template:
+        metadata:
+            labels:
+                app: media-service
+        spec:
+            containers:
+                - name: media-service
+                  image: kirillasyamov/media-service:latest
+                  imagePullPolicy: Always
+                  ports:
+                      - name: grpc
+                        containerPort: 50006
+                  envFrom:
+                      - configMapRef:
+                            name: backend-config
+                      - secretRef:
+                            name: backend-secret
+                  env:
+                      - name: NODE_ENV
+                        value: production
+                      - name: GRPC_PORT
+                        value: '50006'
+                  readinessProbe:
+                      grpc:
+                          port: 50006
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                  livenessProbe:
+                      grpc:
+                          port: 50006
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
     name: api-gateway
     namespace: backend
     labels:
@@ -261,3 +306,51 @@ spec:
               resources:
                   requests:
                       storage: 512Mi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+    name: minio
+    namespace: backend
+    labels:
+        app: minio
+spec:
+    serviceName: minio
+    replicas: 1
+    selector:
+        matchLabels:
+            app: minio
+    template:
+        metadata:
+            labels:
+                app: minio
+        spec:
+            containers:
+                - name: minio
+                  image: minio/minio:latest
+                  args: ['server', '/data', '--console-address', ':9001']
+                  ports:
+                      - containerPort: 9000
+                      - containerPort: 9001
+                  env:
+                      - name: MINIO_ROOT_USER
+                        valueFrom:
+                            secretKeyRef:
+                                name: backend-secret
+                                key: MINIO_ROOT_USER
+                      - name: MINIO_ROOT_PASSWORD
+                        valueFrom:
+                            secretKeyRef:
+                                name: backend-secret
+                                key: MINIO_ROOT_PASSWORD
+                  volumeMounts:
+                      - name: minio-data
+                        mountPath: /data
+    volumeClaimTemplates:
+        - metadata:
+              name: minio-data
+          spec:
+              accessModes: ['ReadWriteOnce']
+              resources:
+                  requests:
+                      storage: 1Gi

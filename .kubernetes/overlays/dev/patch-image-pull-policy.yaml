@@ -45,3 +45,15 @@ spec:
             containers:
                 - name: token-service
                   imagePullPolicy: IfNotPresent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: media-service
+    namespace: backend
+spec:
+    template:
+        spec:
+            containers:
+                - name: media-service
+                  imagePullPolicy: IfNotPresent
