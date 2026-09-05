@@ -55,6 +55,7 @@ export const grpcClients = (descriptors: IGrpcClientDescriptor[]): ClientsProvid
 				protoPath: protoPaths,
 				url,
 				channelOptions: grpcServiceConfig.grpcChannelOptions,
+				loader: { defaults: true, arrays: true },
 			},
 		}),
 	}));

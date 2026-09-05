@@ -25,6 +25,7 @@ message UserProfileData {
 	uint32 age = 3;
 	string bio = 4;
 	string balance = 5;
+	repeated string avatars = 6;
 }
 
 message CreateUserRequest {

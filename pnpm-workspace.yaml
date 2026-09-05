@@ -88,7 +88,7 @@ catalogs:
         '@node-rs/argon2': '^2.0.2'
         jose: ^6.0.12
     common:
-        '@kirillasyamov/common': ^3.1.5
+        '@kirillasyamov/common': ^3.1.8
     test:
         '@nestjs/testing': ^11.1.27
         '@vitest/coverage-v8': ^4.1.0

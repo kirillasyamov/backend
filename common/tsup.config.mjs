@@ -30,6 +30,7 @@ export default defineConfig({
 		'contracts/generated/auth.ts',
 		'contracts/generated/token.ts',
 		'contracts/generated/user.ts',
+		'contracts/generated/media.ts',
 		'contracts/generated/google/protobuf/empty.ts',
 		'contracts/generated/google/protobuf/timestamp.ts',
 		'contracts/contracts.constants.ts',
