@@ -144,6 +144,7 @@ publish-common-patch:
 	$(MAKE) update-common-package-version
 
 publish-docker-images:
+	docker buildx bake pnpm-cache-warm
 	docker login -u kirillasyamov --password $(DOCKER_PUBLISH_TOKEN)
 	docker buildx bake --push
 
