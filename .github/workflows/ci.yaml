@@ -21,6 +21,13 @@ jobs:
 
             - run: pnpm install --frozen-lockfile
 
+            - name: Generate Prisma clients
+              env:
+                  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+              run: |
+                  pnpm --filter auth-service exec prisma generate
+                  pnpm --filter user-service exec prisma generate
+
             - run: pnpm lint
             - run: pnpm format:check
             - run: pnpm build

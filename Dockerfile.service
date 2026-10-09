@@ -15,7 +15,9 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store/v11 \
       --config.network-timeout=60000 --config.fetch-retries=2 \
       --filter $SERVICE
 
-RUN [ -f $SERVICE/prisma/schema.prisma ] && pnpm --filter $SERVICE exec prisma generate || true
+ENV DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+
+RUN if [ -f $SERVICE/prisma/schema.prisma ]; then pnpm --filter $SERVICE exec prisma generate; fi
 
 FROM node:22-alpine AS builder
 WORKDIR /repo
