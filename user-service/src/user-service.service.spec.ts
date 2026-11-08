@@ -7,7 +7,8 @@ import { BALANCE_RESET_QUEUE, MAX_ACTIVE_AVATARS } from './user-service.constant
 import { vi } from 'vitest';
 import { getQueueToken } from '@nestjs/bullmq';
 import { SchedulerRegistry } from '@nestjs/schedule/dist/scheduler.registry';
-import { Prisma } from '@prismagen/client';
+import { Prisma, AvatarStatus } from '@prismagen/client';
+import { AvatarStatus as ProtoAvatarStatus } from '@kirillasyamov/common/contracts/generated/user';
 
 describe('UserService', () => {
 	let service: UserService;
@@ -121,12 +122,57 @@ describe('UserService', () => {
 
 	it('deleteAvatar soft-deletes owned avatar', async () => {
 		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
-		avatarRepository.findOwnedById.mockResolvedValue({ userId: 'usr_1', isActive: true });
+		avatarRepository.findOwnedById.mockResolvedValue({ userId: 'usr_1', status: AvatarStatus.ACTIVE });
 
 		await service.deleteAvatar({ login: 'usr_1', avatarId: 'av_1' });
 
 		expect(avatarRepository.findOwnedById).toHaveBeenCalledWith('usr_1', 'av_1');
 		expect(avatarRepository.softDelete).toHaveBeenCalledWith('av_1');
+	});
+
+	it('setAvatarStatus maps confirmed result to ACTIVE and persists mimeType', async () => {
+		avatarRepository.updateStatusByMediaKey.mockResolvedValue(undefined);
+
+		await service.setAvatarStatus({ mediaKey: 'avatar/usr_1/f', status: ProtoAvatarStatus.AVATAR_STATUS_ACTIVE, mimeType: 'image/png' });
+
+		expect(avatarRepository.updateStatusByMediaKey).toHaveBeenCalledWith('avatar/usr_1/f', AvatarStatus.ACTIVE, 'image/png');
+	});
+
+	it('setAvatarStatus maps rejected result to REJECTED and keeps the reported mimeType', async () => {
+		avatarRepository.updateStatusByMediaKey.mockResolvedValue(undefined);
+
+		await service.setAvatarStatus({ mediaKey: 'avatar/usr_1/f', status: ProtoAvatarStatus.AVATAR_STATUS_REJECTED, mimeType: 'application/x-msdownload' });
+
+		expect(avatarRepository.updateStatusByMediaKey).toHaveBeenCalledWith('avatar/usr_1/f', AvatarStatus.REJECTED, 'application/x-msdownload');
+	});
+
+	it('setAvatarStatus omits the mimeType when media-service reports none', async () => {
+		avatarRepository.updateStatusByMediaKey.mockResolvedValue(undefined);
+
+		await service.setAvatarStatus({ mediaKey: 'avatar/usr_1/f', status: ProtoAvatarStatus.AVATAR_STATUS_REJECTED });
+
+		expect(avatarRepository.updateStatusByMediaKey).toHaveBeenCalledWith('avatar/usr_1/f', AvatarStatus.REJECTED, undefined);
+	});
+
+	it('setAvatarStatus for an unknown mediaKey resolves without touching any avatar (repo no-op)', async () => {
+		avatarRepository.updateStatusByMediaKey.mockResolvedValue(undefined);
+
+		await expect(service.setAvatarStatus({ mediaKey: 'avatar/usr_unknown/f', status: ProtoAvatarStatus.AVATAR_STATUS_ACTIVE })).resolves.toBeUndefined();
+		expect(avatarRepository.updateStatusByMediaKey).toHaveBeenCalledWith('avatar/usr_unknown/f', AvatarStatus.ACTIVE, undefined);
+	});
+
+	it('setAvatarStatus throws INVALID_ARGUMENT without mediaKey', async () => {
+		await expect(service.setAvatarStatus({ mediaKey: '', status: ProtoAvatarStatus.AVATAR_STATUS_ACTIVE })).rejects.toMatchObject({
+			error: { code: status.INVALID_ARGUMENT, message: 'mediaKey is required' },
+		});
+		expect(avatarRepository.updateStatusByMediaKey).not.toHaveBeenCalled();
+	});
+
+	it('setAvatarStatus throws INVALID_ARGUMENT for an unknown status value', async () => {
+		await expect(service.setAvatarStatus({ mediaKey: 'avatar/usr_1/f', status: 99 as ProtoAvatarStatus })).rejects.toMatchObject({
+			error: { code: status.INVALID_ARGUMENT, message: 'Unknown avatar status' },
+		});
+		expect(avatarRepository.updateStatusByMediaKey).not.toHaveBeenCalled();
 	});
 
 	it('getMostActiveUsers maps rows with latest avatar', async () => {

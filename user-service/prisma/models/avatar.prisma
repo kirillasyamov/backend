@@ -1,3 +1,9 @@
+enum AvatarStatus {
+	PENDING
+	ACTIVE
+	REJECTED
+}
+
 model Avatar {
 	id        String @id @default(nanoid())
 	userId    String
@@ -7,13 +13,13 @@ model Avatar {
 	mimeType  String?
 	sizeBytes Int?
 
-	isActive  Boolean  @default(true)
+	status    AvatarStatus @default(PENDING)
 	deletedAt DateTime?
 
 	createdAt DateTime @default(now())
 	updatedAt DateTime @updatedAt
 
-	@@index([userId, isActive])
+	@@index([userId, status])
 	@@index([userId, createdAt])
 	@@map("avatar")
 }

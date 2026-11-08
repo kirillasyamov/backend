@@ -17,6 +17,7 @@ import {
 	type UploadAvatarRequest,
 	type UploadAvatarResponse,
 	type DeleteAvatarRequest,
+	type SetAvatarStatusRequest,
 	type GetMostActiveUsersRequest,
 	type GetMostActiveUsersResponse,
 } from '@kirillasyamov/common/contracts/generated/user';
@@ -66,6 +67,10 @@ export class UserController {
 
 	public async deleteAvatar(data: DeleteAvatarRequest): Promise<void> {
 		return this.userService.deleteAvatar(data);
+	}
+
+	public async setAvatarStatus(data: SetAvatarStatusRequest): Promise<void> {
+		return this.userService.setAvatarStatus(data);
 	}
 
 	public async getMostActiveUsers(data: GetMostActiveUsersRequest): Promise<GetMostActiveUsersResponse> {

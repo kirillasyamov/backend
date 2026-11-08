@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
-import { Prisma, User } from '@prismagen/client';
+import { Prisma, User, AvatarStatus as DbAvatarStatus } from '@prismagen/client';
 import { UserRepository, AvatarRepository, MostActiveUserRow, InsufficientFundsError, AvatarLimitReachedError } from './repositories';
 import { BALANCE_RESET_QUEUE, BALANCE_RESET_JOB, DEFAULT_PAGE, DEFAULT_LIMIT, MAX_ACTIVE_AVATARS } from './user-service.constants';
 import {
@@ -21,6 +21,8 @@ import {
 	UploadAvatarRequest,
 	UploadAvatarResponse,
 	DeleteAvatarRequest,
+	AvatarStatus,
+	SetAvatarStatusRequest,
 	GetMostActiveUsersRequest,
 	GetMostActiveUsersResponse,
 	MostActiveUser,
@@ -224,6 +226,28 @@ export class UserService implements UserServiceControllerInterface {
 
 		await this.avatarRepository.softDelete(request.avatarId);
 		this.logger.log(`Avatar soft-deleted: avatarId=${request.avatarId} userId=${user.id}`);
+	}
+
+	public async setAvatarStatus(request: SetAvatarStatusRequest): Promise<void> {
+		if (!request.mediaKey) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'mediaKey is required' });
+
+		const dbStatus = this.mapAvatarStatus(request.status);
+		await this.avatarRepository.updateStatusByMediaKey(request.mediaKey, dbStatus, request.mimeType);
+		this.logger.log(`Avatar status updated by media key: mediaKey=${request.mediaKey} status=${dbStatus}${request.mimeType ? ` mimeType=${request.mimeType}` : ''}`);
+	}
+
+	// Maps the contract status (media-service reports confirmed → ACTIVE, rejected → REJECTED) onto the Prisma enum.
+	private mapAvatarStatus(value: AvatarStatus): DbAvatarStatus {
+		switch (value) {
+			case AvatarStatus.AVATAR_STATUS_PENDING:
+				return DbAvatarStatus.PENDING;
+			case AvatarStatus.AVATAR_STATUS_ACTIVE:
+				return DbAvatarStatus.ACTIVE;
+			case AvatarStatus.AVATAR_STATUS_REJECTED:
+				return DbAvatarStatus.REJECTED;
+			default:
+				throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'Unknown avatar status' });
+		}
 	}
 
 	public async getMostActiveUsers(request: GetMostActiveUsersRequest): Promise<GetMostActiveUsersResponse> {

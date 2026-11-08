@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PRISMA_CLIENT } from '@kirillasyamov/common';
-import { Prisma, type PrismaClient } from '@prismagen/client';
+import { AvatarStatus, Prisma, type PrismaClient } from '@prismagen/client';
 import { MAX_ACTIVE_AVATARS } from '../user-service.constants';
 
 export interface MostActiveUserRow {
@@ -33,7 +33,7 @@ export class AvatarRepository {
 	constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
 
 	public async countActiveByUser(userId: string): Promise<number> {
-		return this.prisma.avatar.count({ where: { userId, isActive: true } });
+		return this.prisma.avatar.count({ where: { userId, status: AvatarStatus.ACTIVE, deletedAt: null } });
 	}
 
 	public async createWithinLimit(
@@ -45,7 +45,7 @@ export class AvatarRepository {
 	}> {
 		return this.prisma.$transaction(async tx => {
 			await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${userId} FOR UPDATE`;
-			const active = await tx.avatar.count({ where: { userId, isActive: true, deletedAt: null } });
+			const active = await tx.avatar.count({ where: { userId, status: AvatarStatus.ACTIVE, deletedAt: null } });
 			if (active >= MAX_ACTIVE_AVATARS) throw new AvatarLimitReachedError();
 			const avatar = await tx.avatar.create({
 				data: {
@@ -70,14 +70,25 @@ export class AvatarRepository {
 				userId,
 				mediaKey: data.mediaKey,
 				sizeBytes: data.sizeBytes,
+				status: AvatarStatus.PENDING,
 			},
 		});
 		return { id: avatar.id, mediaKey: avatar.mediaKey };
 	}
 
+	public async updateStatusByMediaKey(mediaKey: string, status: AvatarStatus, mimeType?: string): Promise<void> {
+		await this.prisma.avatar.updateMany({
+			where: { mediaKey },
+			data: {
+				status,
+				...(mimeType ? { mimeType } : {}),
+			},
+		});
+	}
+
 	public async findActiveMediaKeysByUserId(userId: string): Promise<string[]> {
 		const avatars = await this.prisma.avatar.findMany({
-			where: { userId, isActive: true },
+			where: { userId, status: AvatarStatus.ACTIVE, deletedAt: null },
 			select: { mediaKey: true },
 			orderBy: { createdAt: 'desc' },
 		});
@@ -88,7 +99,7 @@ export class AvatarRepository {
 		if (userIds.length === 0) return new Map();
 
 		const avatars = await this.prisma.avatar.findMany({
-			where: { userId: { in: userIds }, isActive: true },
+			where: { userId: { in: userIds }, status: AvatarStatus.ACTIVE, deletedAt: null },
 			select: { userId: true, mediaKey: true },
 			orderBy: { createdAt: 'desc' },
 		});
@@ -105,10 +116,10 @@ export class AvatarRepository {
 		return byUser;
 	}
 
-	public async findOwnedById(userId: string, avatarId: string): Promise<{ userId: string; isActive: boolean } | null> {
+	public async findOwnedById(userId: string, avatarId: string): Promise<{ userId: string; status: AvatarStatus } | null> {
 		const avatar = await this.prisma.avatar.findFirst({
-			where: { id: avatarId, isActive: true, user: { id: userId } },
-			select: { userId: true, isActive: true },
+			where: { id: avatarId, status: AvatarStatus.ACTIVE, deletedAt: null, user: { id: userId } },
+			select: { userId: true, status: true },
 		});
 		return avatar;
 	}
@@ -116,7 +127,7 @@ export class AvatarRepository {
 	public async softDelete(avatarId: string): Promise<void> {
 		await this.prisma.avatar.update({
 			where: { id: avatarId },
-			data: { isActive: false, deletedAt: new Date() },
+			data: { deletedAt: new Date() },
 		});
 	}
 
@@ -125,7 +136,7 @@ export class AvatarRepository {
 		const where: Prisma.Sql[] = [
 			Prisma.sql`u."deletedAt" IS NULL`,
 			Prisma.sql`u.bio <> ''`,
-			Prisma.sql`(SELECT COUNT(*) FROM "avatar" a2 WHERE a2."userId" = u.id AND a2."isActive" = true) >= ${MAX_ACTIVE_AVATARS}`,
+			Prisma.sql`(SELECT COUNT(*) FROM "avatar" a2 WHERE a2."userId" = u.id AND a2."status" = 'ACTIVE' AND a2."deletedAt" IS NULL) >= ${MAX_ACTIVE_AVATARS}`,
 		];
 		if (options.minAge !== undefined) where.push(Prisma.sql`u.age >= ${options.minAge}`);
 		if (options.maxAge !== undefined) where.push(Prisma.sql`u.age <= ${options.maxAge}`);
@@ -144,7 +155,7 @@ export class AvatarRepository {
 				LEFT JOIN LATERAL (
 					SELECT id, "mediaKey", "mimeType", "createdAt"
 					FROM "avatar"
-					WHERE "userId" = u.id
+					WHERE "userId" = u.id AND "status" = 'ACTIVE' AND "deletedAt" IS NULL
 					ORDER BY "createdAt" DESC
 					LIMIT 1
 				) a ON true
