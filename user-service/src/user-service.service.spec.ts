@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { mockDeep } from 'vitest-mock-extended';
 import { status } from '@grpc/grpc-js';
 import { UserService } from './user-service.service';
-import { UserRepository, AvatarRepository, InsufficientFundsError } from './repositories';
+import { UserRepository, AvatarRepository, InsufficientFundsError, AvatarLimitReachedError } from './repositories';
 import { BALANCE_RESET_QUEUE, MAX_ACTIVE_AVATARS } from './user-service.constants';
 import { vi } from 'vitest';
 import { getQueueToken } from '@nestjs/bullmq';
@@ -69,26 +69,35 @@ describe('UserService', () => {
 		});
 	});
 
-	it('uploadAvatar rejects when active limit reached', async () => {
+	it('uploadAvatar rejects with unchanged RESOURCE_EXHAUSTED contract when the limit is reached', async () => {
 		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
-		avatarRepository.countActiveByUser.mockResolvedValue(MAX_ACTIVE_AVATARS);
+		avatarRepository.createWithinLimit.mockRejectedValue(new AvatarLimitReachedError());
 
 		await expect(service.uploadAvatar({ login: 'usr_1', mediaKey: 'avatar/usr_1/f' })).rejects.toMatchObject({
-			error: { code: status.RESOURCE_EXHAUSTED },
+			error: { code: status.RESOURCE_EXHAUSTED, message: `Active avatar limit reached (max ${String(MAX_ACTIVE_AVATARS)})` },
 		});
-		expect(avatarRepository.create).not.toHaveBeenCalled();
+		expect(avatarRepository.createWithinLimit).toHaveBeenCalledWith('usr_1', { mediaKey: 'avatar/usr_1/f', fileName: undefined, sizeBytes: undefined });
 	});
 
-	it('uploadAvatar registers avatar when under limit', async () => {
+	it('uploadAvatar registers avatar via createWithinLimit when under the limit', async () => {
 		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
-		avatarRepository.countActiveByUser.mockResolvedValue(2);
-		avatarRepository.create.mockResolvedValue({ id: 'av_1', mediaKey: 'avatar/usr_1/f' });
+		avatarRepository.createWithinLimit.mockResolvedValue({ id: 'av_1', mediaKey: 'avatar/usr_1/f' });
 
 		const result = await service.uploadAvatar({ login: 'usr_1', mediaKey: 'avatar/usr_1/f' });
 
 		expect(userRepository.findByLogin).toHaveBeenCalledWith('usr_1');
-		expect(avatarRepository.create).toHaveBeenCalledWith('usr_1', { mediaKey: 'avatar/usr_1/f', fileName: undefined, sizeBytes: undefined });
+		expect(avatarRepository.createWithinLimit).toHaveBeenCalledWith('usr_1', { mediaKey: 'avatar/usr_1/f', fileName: undefined, sizeBytes: undefined });
 		expect(result).toEqual({ avatarId: 'av_1', mediaKey: 'avatar/usr_1/f' });
+	});
+
+	it('uploadAvatar no longer uses the non-transactional count-then-create sequence', async () => {
+		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
+		avatarRepository.createWithinLimit.mockResolvedValue({ id: 'av_1', mediaKey: 'avatar/usr_1/f' });
+
+		await service.uploadAvatar({ login: 'usr_1', mediaKey: 'avatar/usr_1/f' });
+
+		expect(avatarRepository.countActiveByUser).not.toHaveBeenCalled();
+		expect(avatarRepository.create).not.toHaveBeenCalled();
 	});
 
 	it('deleteAvatar throws NOT_FOUND when user missing', async () => {
