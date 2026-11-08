@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { mockDeep } from 'vitest-mock-extended';
 import { status } from '@grpc/grpc-js';
 import { UserService } from './user-service.service';
-import { UserRepository, AvatarRepository } from './repositories';
+import { UserRepository, AvatarRepository, InsufficientFundsError } from './repositories';
 import { BALANCE_RESET_QUEUE, MAX_ACTIVE_AVATARS } from './user-service.constants';
 import { vi } from 'vitest';
 import { getQueueToken } from '@nestjs/bullmq';
@@ -149,5 +149,52 @@ describe('UserService', () => {
 			mimeType: 'image/png',
 			createdAt: '2026-01-01T00:00:00.000Z',
 		});
+	});
+
+	it('transferBalance maps InsufficientFundsError to FAILED_PRECONDITION with unchanged gRPC contract', async () => {
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_1', login: 'alice', balance: { toFixed: () => '100.00' } } as never);
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_2', login: 'bob', balance: { toFixed: () => '0.00' } } as never);
+		userRepository.transferBalance.mockRejectedValue(new InsufficientFundsError());
+
+		await expect(service.transferBalance({ senderLogin: 'alice', recipientLogin: 'bob', amount: '80', idempotencyKey: 'k' })).rejects.toMatchObject({
+			error: { code: status.FAILED_PRECONDITION, message: 'Insufficient funds' },
+		});
+		expect(userRepository.transferBalance).toHaveBeenCalledWith('usr_1', 'usr_2', new Prisma.Decimal('80'), 'k');
+	});
+
+	it('transferBalance still rejects NOT_FOUND when sender is missing', async () => {
+		userRepository.findByLogin.mockResolvedValueOnce(null);
+
+		await expect(service.transferBalance({ senderLogin: 'ghost', recipientLogin: 'bob', amount: '10', idempotencyKey: 'k' })).rejects.toMatchObject({
+			error: { code: status.NOT_FOUND, message: 'Sender not found' },
+		});
+		expect(userRepository.transferBalance).not.toHaveBeenCalled();
+	});
+
+	it('transferBalance still rejects NOT_FOUND when recipient is missing', async () => {
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_1', login: 'alice', balance: { toFixed: () => '100.00' } } as never);
+		userRepository.findByLogin.mockResolvedValueOnce(null);
+
+		await expect(service.transferBalance({ senderLogin: 'alice', recipientLogin: 'ghost', amount: '10', idempotencyKey: 'k' })).rejects.toMatchObject({
+			error: { code: status.NOT_FOUND, message: 'Recipient not found' },
+		});
+		expect(userRepository.transferBalance).not.toHaveBeenCalled();
+	});
+
+	it('transferBalance succeeds when sender has enough balance and returns updated balance', async () => {
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_1', login: 'alice', balance: { toFixed: () => '100.00' } } as never);
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_2', login: 'bob', balance: { toFixed: () => '0.00' } } as never);
+		userRepository.transferBalance.mockResolvedValue(undefined);
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_1', login: 'alice', balance: { toFixed: () => '20.00' } } as never);
+
+		const result = await service.transferBalance({
+			senderLogin: 'alice',
+			recipientLogin: 'bob',
+			amount: '80',
+			idempotencyKey: 'k',
+		});
+
+		expect(userRepository.transferBalance).toHaveBeenCalledWith('usr_1', 'usr_2', new Prisma.Decimal('80'), 'k');
+		expect(result).toEqual({ updatedBalance: '20.00' });
 	});
 });
