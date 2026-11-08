@@ -21,12 +21,41 @@ export interface MostActiveUsersPage {
 	total: number;
 }
 
+export class AvatarLimitReachedError extends Error {
+	constructor() {
+		super('Active avatar limit reached');
+		this.name = 'AvatarLimitReachedError';
+	}
+}
+
 @Injectable()
 export class AvatarRepository {
 	constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
 
 	public async countActiveByUser(userId: string): Promise<number> {
 		return this.prisma.avatar.count({ where: { userId, isActive: true } });
+	}
+
+	public async createWithinLimit(
+		userId: string,
+		data: { mediaKey: string; fileName?: string; sizeBytes?: number },
+	): Promise<{
+		id: string;
+		mediaKey: string;
+	}> {
+		return this.prisma.$transaction(async tx => {
+			await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${userId} FOR UPDATE`;
+			const active = await tx.avatar.count({ where: { userId, isActive: true, deletedAt: null } });
+			if (active >= MAX_ACTIVE_AVATARS) throw new AvatarLimitReachedError();
+			const avatar = await tx.avatar.create({
+				data: {
+					userId,
+					mediaKey: data.mediaKey,
+					sizeBytes: data.sizeBytes,
+				},
+			});
+			return { id: avatar.id, mediaKey: avatar.mediaKey };
+		});
 	}
 
 	public async create(
@@ -96,7 +125,7 @@ export class AvatarRepository {
 		const where: Prisma.Sql[] = [
 			Prisma.sql`u."deletedAt" IS NULL`,
 			Prisma.sql`u.bio <> ''`,
-			Prisma.sql`(SELECT COUNT(*) FROM "avatar" a2 WHERE a2."userId" = u.id AND a2."isActive" = true) > ${MAX_ACTIVE_AVATARS}`,
+			Prisma.sql`(SELECT COUNT(*) FROM "avatar" a2 WHERE a2."userId" = u.id AND a2."isActive" = true) >= ${MAX_ACTIVE_AVATARS}`,
 		];
 		if (options.minAge !== undefined) where.push(Prisma.sql`u.age >= ${options.minAge}`);
 		if (options.maxAge !== undefined) where.push(Prisma.sql`u.age <= ${options.maxAge}`);

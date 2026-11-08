@@ -3,7 +3,7 @@ import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { Prisma, User } from '@prismagen/client';
-import { UserRepository, AvatarRepository, MostActiveUserRow, InsufficientFundsError } from './repositories';
+import { UserRepository, AvatarRepository, MostActiveUserRow, InsufficientFundsError, AvatarLimitReachedError } from './repositories';
 import { BALANCE_RESET_QUEUE, BALANCE_RESET_JOB, DEFAULT_PAGE, DEFAULT_LIMIT, MAX_ACTIVE_AVATARS } from './user-service.constants';
 import {
 	UserServiceController as UserServiceControllerInterface,
@@ -192,22 +192,24 @@ export class UserService implements UserServiceControllerInterface {
 		const user = await this.userRepository.findByLogin(request.login);
 		if (!user) throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
 
-		const activeCount = await this.avatarRepository.countActiveByUser(user.id);
-		if (activeCount >= MAX_ACTIVE_AVATARS) {
-			this.logger.warn(`Avatar upload rejected: active limit reached (userId=${user.id}, active=${String(activeCount)})`);
-			throw new RpcException({
-				code: status.RESOURCE_EXHAUSTED,
-				message: `Active avatar limit reached (max ${String(MAX_ACTIVE_AVATARS)})`,
+		try {
+			const avatar = await this.avatarRepository.createWithinLimit(user.id, {
+				mediaKey: request.mediaKey,
+				fileName: request.fileName,
+				sizeBytes: request.sizeBytes,
 			});
+			this.logger.log(`Avatar registered: avatarId=${avatar.id} userId=${user.id} mediaKey=${avatar.mediaKey}`);
+			return { avatarId: avatar.id, mediaKey: avatar.mediaKey };
+		} catch (error) {
+			if (error instanceof AvatarLimitReachedError) {
+				this.logger.warn(`Avatar upload rejected: active limit reached (userId=${user.id})`);
+				throw new RpcException({
+					code: status.RESOURCE_EXHAUSTED,
+					message: `Active avatar limit reached (max ${String(MAX_ACTIVE_AVATARS)})`,
+				});
+			}
+			throw error;
 		}
-
-		const avatar = await this.avatarRepository.create(user.id, {
-			mediaKey: request.mediaKey,
-			fileName: request.fileName,
-			sizeBytes: request.sizeBytes,
-		});
-		this.logger.log(`Avatar registered: avatarId=${avatar.id} userId=${user.id} mediaKey=${avatar.mediaKey}`);
-		return { avatarId: avatar.id, mediaKey: avatar.mediaKey };
 	}
 
 	public async deleteAvatar(request: DeleteAvatarRequest): Promise<void> {
