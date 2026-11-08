@@ -2,6 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PRISMA_CLIENT } from '@kirillasyamov/common';
 import { User, Prisma, type PrismaClient } from '@prismagen/client';
 
+export class InsufficientFundsError extends Error {
+	constructor() {
+		super('Insufficient funds');
+		this.name = 'InsufficientFundsError';
+	}
+}
+
 @Injectable()
 export class UserRepository {
 	constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
@@ -61,7 +68,11 @@ export class UserRepository {
 		try {
 			await this.prisma.$transaction(async tx => {
 				await tx.transfer.create({ data: { idempotencyKey, fromUserId: fromId, toUserId: toId, amount } });
-				await tx.user.update({ where: { id: fromId }, data: { balance: { decrement: amount } } });
+				const debit = await tx.user.updateMany({
+					where: { id: fromId, balance: { gte: amount } },
+					data: { balance: { decrement: amount } },
+				});
+				if (debit.count === 0) throw new InsufficientFundsError();
 				await tx.user.update({ where: { id: toId }, data: { balance: { increment: amount } } });
 			});
 		} catch (error) {

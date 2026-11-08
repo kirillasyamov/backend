@@ -3,7 +3,7 @@ import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { Prisma, User } from '@prismagen/client';
-import { UserRepository, AvatarRepository, MostActiveUserRow } from './repositories';
+import { UserRepository, AvatarRepository, MostActiveUserRow, InsufficientFundsError } from './repositories';
 import { BALANCE_RESET_QUEUE, BALANCE_RESET_JOB, DEFAULT_PAGE, DEFAULT_LIMIT, MAX_ACTIVE_AVATARS } from './user-service.constants';
 import {
 	UserServiceController as UserServiceControllerInterface,
@@ -141,14 +141,14 @@ export class UserService implements UserServiceControllerInterface {
 		if (!sender) throw new RpcException({ code: status.NOT_FOUND, message: 'Sender not found' });
 		const recipient = await this.userRepository.findByLogin(request.recipientLogin);
 		if (!recipient) throw new RpcException({ code: status.NOT_FOUND, message: 'Recipient not found' });
-		if (amount.greaterThan(sender.balance)) {
-			this.logger.warn(`Balance transfer failed: insufficient funds (sender=${request.senderLogin}, amount=${request.amount})`);
-			throw new RpcException({ code: status.FAILED_PRECONDITION, message: 'Insufficient funds' });
-		}
 
 		try {
 			await this.userRepository.transferBalance(sender.id, recipient.id, amount, request.idempotencyKey);
 		} catch (error) {
+			if (error instanceof InsufficientFundsError) {
+				this.logger.warn(`Balance transfer failed: insufficient funds (sender=${request.senderLogin}, amount=${request.amount})`);
+				throw new RpcException({ code: status.FAILED_PRECONDITION, message: 'Insufficient funds' });
+			}
 			if (error instanceof Error) {
 				this.logger.warn(`Balance transfer failed (sender=${request.senderLogin}, recipient=${request.recipientLogin}, amount=${request.amount}): ${error.message}`);
 				throw new RpcException({ code: status.FAILED_PRECONDITION, message: error.message });
