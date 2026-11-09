@@ -13,3 +13,5 @@ export const LIST_MAX_KEYS = 1000;
 export const MINIO_STREAM = 'minio-events';
 export const CONSUMER_GROUP = 'media-verify';
 export const CONSUMER_NAME = 'media-consumer-1';
+
+export const USER_PACKAGE = 'USER_PACKAGE';
