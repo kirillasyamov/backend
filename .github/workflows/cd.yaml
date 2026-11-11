@@ -32,21 +32,21 @@ jobs:
 
                 - name: Pull fresh images
                   run: |
-                    for svc in auth-service user-service token-service api-gateway media-service; do
-                        minikube image pull kirillasyamov/$svc:latest
-                    done
+                      for svc in auth-service user-service token-service api-gateway media-service; do
+                          minikube image pull kirillasyamov/$svc:latest
+                      done
 
                 - name: Apply manifests
                   run: kubectl apply -k .kubernetes/overlays/prod
 
                 - name: Restart deployments
                   run: |
-                    kubectl -n backend rollout restart deployment
-                    kubectl wait deployment --all -n backend --for=condition=Available --timeout=5m
+                      kubectl -n backend rollout restart deployment
+                      kubectl wait deployment --all -n backend --for=condition=Available --timeout=5m
 
                 - name: Wait for ngrok tunnel
                   run: kubectl -n backend rollout status deployment/ngrok --timeout=2m
 
                 - name: Verify public endpoint
-                  run: curl -fsS --max-time 15 -H 'ngrok-skip-browser-warning: true' https://envoy-thrill-pester.ngrok-free.dev/healthz
-
+                  run: >-
+                      curl -fsS --max-time 15 -H 'ngrok-skip-browser-warning: true' https://envoy-thrill-pester.ngrok-free.dev/healthz
