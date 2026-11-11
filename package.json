@@ -9,6 +9,7 @@
 		"start": "pnpm -r --parallel run start:prod",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
+		"lint:docker": "hadolint Dockerfile*",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"test": "pnpm -r --parallel run test",
@@ -48,6 +49,9 @@
 		],
 		"**/*.{json,js,ts,jsx,tsx}": [
 			"prettier --write --ignore-unknown"
+		],
+		"**/[Dd]ockerfile*": [
+			"hadolint"
 		]
 	}
 }

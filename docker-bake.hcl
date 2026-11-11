@@ -37,6 +37,12 @@ target "media-service" {
 	tags = ["${REGISTRY}/media-service:latest"]
 }
 
+target "pnpm-cache-warm" {
+	context = "."
+	dockerfile = "Dockerfile.deps"
+	output = ["type=cacheonly"]
+}
+
 group "default" {
  	targets = ["auth-service", "user-service", "token-service", "api-gateway", "media-service"]
 }

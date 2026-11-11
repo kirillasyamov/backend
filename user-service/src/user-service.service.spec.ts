@@ -2,12 +2,13 @@ import { Test } from '@nestjs/testing';
 import { mockDeep } from 'vitest-mock-extended';
 import { status } from '@grpc/grpc-js';
 import { UserService } from './user-service.service';
-import { UserRepository, AvatarRepository } from './repositories';
+import { UserRepository, AvatarRepository, InsufficientFundsError, AvatarLimitReachedError } from './repositories';
 import { BALANCE_RESET_QUEUE, MAX_ACTIVE_AVATARS } from './user-service.constants';
 import { vi } from 'vitest';
 import { getQueueToken } from '@nestjs/bullmq';
 import { SchedulerRegistry } from '@nestjs/schedule/dist/scheduler.registry';
-import { Prisma } from '@prismagen/client';
+import { Prisma, AvatarStatus } from '@prismagen/client';
+import { AvatarStatus as ProtoAvatarStatus } from '@kirillasyamov/common/contracts/generated/user';
 
 describe('UserService', () => {
 	let service: UserService;
@@ -69,26 +70,35 @@ describe('UserService', () => {
 		});
 	});
 
-	it('uploadAvatar rejects when active limit reached', async () => {
+	it('uploadAvatar rejects with unchanged RESOURCE_EXHAUSTED contract when the limit is reached', async () => {
 		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
-		avatarRepository.countActiveByUser.mockResolvedValue(MAX_ACTIVE_AVATARS);
+		avatarRepository.createWithinLimit.mockRejectedValue(new AvatarLimitReachedError());
 
 		await expect(service.uploadAvatar({ login: 'usr_1', mediaKey: 'avatar/usr_1/f' })).rejects.toMatchObject({
-			error: { code: status.RESOURCE_EXHAUSTED },
+			error: { code: status.RESOURCE_EXHAUSTED, message: `Active avatar limit reached (max ${String(MAX_ACTIVE_AVATARS)})` },
 		});
-		expect(avatarRepository.create).not.toHaveBeenCalled();
+		expect(avatarRepository.createWithinLimit).toHaveBeenCalledWith('usr_1', { mediaKey: 'avatar/usr_1/f', fileName: undefined, sizeBytes: undefined });
 	});
 
-	it('uploadAvatar registers avatar when under limit', async () => {
+	it('uploadAvatar registers avatar via createWithinLimit when under the limit', async () => {
 		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
-		avatarRepository.countActiveByUser.mockResolvedValue(2);
-		avatarRepository.create.mockResolvedValue({ id: 'av_1', mediaKey: 'avatar/usr_1/f' });
+		avatarRepository.createWithinLimit.mockResolvedValue({ id: 'av_1', mediaKey: 'avatar/usr_1/f' });
 
 		const result = await service.uploadAvatar({ login: 'usr_1', mediaKey: 'avatar/usr_1/f' });
 
 		expect(userRepository.findByLogin).toHaveBeenCalledWith('usr_1');
-		expect(avatarRepository.create).toHaveBeenCalledWith('usr_1', { mediaKey: 'avatar/usr_1/f', fileName: undefined, sizeBytes: undefined });
+		expect(avatarRepository.createWithinLimit).toHaveBeenCalledWith('usr_1', { mediaKey: 'avatar/usr_1/f', fileName: undefined, sizeBytes: undefined });
 		expect(result).toEqual({ avatarId: 'av_1', mediaKey: 'avatar/usr_1/f' });
+	});
+
+	it('uploadAvatar no longer uses the non-transactional count-then-create sequence', async () => {
+		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
+		avatarRepository.createWithinLimit.mockResolvedValue({ id: 'av_1', mediaKey: 'avatar/usr_1/f' });
+
+		await service.uploadAvatar({ login: 'usr_1', mediaKey: 'avatar/usr_1/f' });
+
+		expect(avatarRepository.countActiveByUser).not.toHaveBeenCalled();
+		expect(avatarRepository.create).not.toHaveBeenCalled();
 	});
 
 	it('deleteAvatar throws NOT_FOUND when user missing', async () => {
@@ -112,12 +122,57 @@ describe('UserService', () => {
 
 	it('deleteAvatar soft-deletes owned avatar', async () => {
 		userRepository.findByLogin.mockResolvedValue({ id: 'usr_1' } as never);
-		avatarRepository.findOwnedById.mockResolvedValue({ userId: 'usr_1', isActive: true });
+		avatarRepository.findOwnedById.mockResolvedValue({ userId: 'usr_1', status: AvatarStatus.ACTIVE });
 
 		await service.deleteAvatar({ login: 'usr_1', avatarId: 'av_1' });
 
 		expect(avatarRepository.findOwnedById).toHaveBeenCalledWith('usr_1', 'av_1');
 		expect(avatarRepository.softDelete).toHaveBeenCalledWith('av_1');
+	});
+
+	it('setAvatarStatus maps confirmed result to ACTIVE and persists mimeType', async () => {
+		avatarRepository.updateStatusByMediaKey.mockResolvedValue(undefined);
+
+		await service.setAvatarStatus({ mediaKey: 'avatar/usr_1/f', status: ProtoAvatarStatus.AVATAR_STATUS_ACTIVE, mimeType: 'image/png' });
+
+		expect(avatarRepository.updateStatusByMediaKey).toHaveBeenCalledWith('avatar/usr_1/f', AvatarStatus.ACTIVE, 'image/png');
+	});
+
+	it('setAvatarStatus maps rejected result to REJECTED and keeps the reported mimeType', async () => {
+		avatarRepository.updateStatusByMediaKey.mockResolvedValue(undefined);
+
+		await service.setAvatarStatus({ mediaKey: 'avatar/usr_1/f', status: ProtoAvatarStatus.AVATAR_STATUS_REJECTED, mimeType: 'application/x-msdownload' });
+
+		expect(avatarRepository.updateStatusByMediaKey).toHaveBeenCalledWith('avatar/usr_1/f', AvatarStatus.REJECTED, 'application/x-msdownload');
+	});
+
+	it('setAvatarStatus omits the mimeType when media-service reports none', async () => {
+		avatarRepository.updateStatusByMediaKey.mockResolvedValue(undefined);
+
+		await service.setAvatarStatus({ mediaKey: 'avatar/usr_1/f', status: ProtoAvatarStatus.AVATAR_STATUS_REJECTED });
+
+		expect(avatarRepository.updateStatusByMediaKey).toHaveBeenCalledWith('avatar/usr_1/f', AvatarStatus.REJECTED, undefined);
+	});
+
+	it('setAvatarStatus for an unknown mediaKey resolves without touching any avatar (repo no-op)', async () => {
+		avatarRepository.updateStatusByMediaKey.mockResolvedValue(undefined);
+
+		await expect(service.setAvatarStatus({ mediaKey: 'avatar/usr_unknown/f', status: ProtoAvatarStatus.AVATAR_STATUS_ACTIVE })).resolves.toBeUndefined();
+		expect(avatarRepository.updateStatusByMediaKey).toHaveBeenCalledWith('avatar/usr_unknown/f', AvatarStatus.ACTIVE, undefined);
+	});
+
+	it('setAvatarStatus throws INVALID_ARGUMENT without mediaKey', async () => {
+		await expect(service.setAvatarStatus({ mediaKey: '', status: ProtoAvatarStatus.AVATAR_STATUS_ACTIVE })).rejects.toMatchObject({
+			error: { code: status.INVALID_ARGUMENT, message: 'mediaKey is required' },
+		});
+		expect(avatarRepository.updateStatusByMediaKey).not.toHaveBeenCalled();
+	});
+
+	it('setAvatarStatus throws INVALID_ARGUMENT for an unknown status value', async () => {
+		await expect(service.setAvatarStatus({ mediaKey: 'avatar/usr_1/f', status: 99 as ProtoAvatarStatus })).rejects.toMatchObject({
+			error: { code: status.INVALID_ARGUMENT, message: 'Unknown avatar status' },
+		});
+		expect(avatarRepository.updateStatusByMediaKey).not.toHaveBeenCalled();
 	});
 
 	it('getMostActiveUsers maps rows with latest avatar', async () => {
@@ -149,5 +204,52 @@ describe('UserService', () => {
 			mimeType: 'image/png',
 			createdAt: '2026-01-01T00:00:00.000Z',
 		});
+	});
+
+	it('transferBalance maps InsufficientFundsError to FAILED_PRECONDITION with unchanged gRPC contract', async () => {
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_1', login: 'alice', balance: { toFixed: () => '100.00' } } as never);
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_2', login: 'bob', balance: { toFixed: () => '0.00' } } as never);
+		userRepository.transferBalance.mockRejectedValue(new InsufficientFundsError());
+
+		await expect(service.transferBalance({ senderLogin: 'alice', recipientLogin: 'bob', amount: '80', idempotencyKey: 'k' })).rejects.toMatchObject({
+			error: { code: status.FAILED_PRECONDITION, message: 'Insufficient funds' },
+		});
+		expect(userRepository.transferBalance).toHaveBeenCalledWith('usr_1', 'usr_2', new Prisma.Decimal('80'), 'k');
+	});
+
+	it('transferBalance still rejects NOT_FOUND when sender is missing', async () => {
+		userRepository.findByLogin.mockResolvedValueOnce(null);
+
+		await expect(service.transferBalance({ senderLogin: 'ghost', recipientLogin: 'bob', amount: '10', idempotencyKey: 'k' })).rejects.toMatchObject({
+			error: { code: status.NOT_FOUND, message: 'Sender not found' },
+		});
+		expect(userRepository.transferBalance).not.toHaveBeenCalled();
+	});
+
+	it('transferBalance still rejects NOT_FOUND when recipient is missing', async () => {
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_1', login: 'alice', balance: { toFixed: () => '100.00' } } as never);
+		userRepository.findByLogin.mockResolvedValueOnce(null);
+
+		await expect(service.transferBalance({ senderLogin: 'alice', recipientLogin: 'ghost', amount: '10', idempotencyKey: 'k' })).rejects.toMatchObject({
+			error: { code: status.NOT_FOUND, message: 'Recipient not found' },
+		});
+		expect(userRepository.transferBalance).not.toHaveBeenCalled();
+	});
+
+	it('transferBalance succeeds when sender has enough balance and returns updated balance', async () => {
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_1', login: 'alice', balance: { toFixed: () => '100.00' } } as never);
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_2', login: 'bob', balance: { toFixed: () => '0.00' } } as never);
+		userRepository.transferBalance.mockResolvedValue(undefined);
+		userRepository.findByLogin.mockResolvedValueOnce({ id: 'usr_1', login: 'alice', balance: { toFixed: () => '20.00' } } as never);
+
+		const result = await service.transferBalance({
+			senderLogin: 'alice',
+			recipientLogin: 'bob',
+			amount: '80',
+			idempotencyKey: 'k',
+		});
+
+		expect(userRepository.transferBalance).toHaveBeenCalledWith('usr_1', 'usr_2', new Prisma.Decimal('80'), 'k');
+		expect(result).toEqual({ updatedBalance: '20.00' });
 	});
 });

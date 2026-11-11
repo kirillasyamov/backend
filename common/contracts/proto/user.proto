@@ -16,7 +16,14 @@ service UserService {
 
 	rpc UploadAvatar (UploadAvatarRequest) returns (UploadAvatarResponse);
 	rpc DeleteAvatar (DeleteAvatarRequest) returns (google.protobuf.Empty);
+	rpc SetAvatarStatus (SetAvatarStatusRequest) returns (google.protobuf.Empty);
 	rpc GetMostActiveUsers (GetMostActiveUsersRequest) returns (GetMostActiveUsersResponse);
+}
+
+enum AvatarStatus {
+	AVATAR_STATUS_PENDING = 0;
+	AVATAR_STATUS_ACTIVE = 1;
+	AVATAR_STATUS_REJECTED = 2;
 }
 
 message UserProfileData {
@@ -106,6 +113,12 @@ message UploadAvatarResponse {
 message DeleteAvatarRequest {
 	string login = 1;
 	string avatarId = 2;
+}
+
+message SetAvatarStatusRequest {
+	string mediaKey = 1;
+	AvatarStatus status = 2;
+	optional string mimeType = 3;
 }
 
 message GetMostActiveUsersRequest {

@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
-import { Prisma, User } from '@prismagen/client';
-import { UserRepository, AvatarRepository, MostActiveUserRow } from './repositories';
+import { Prisma, User, AvatarStatus as DbAvatarStatus } from '@prismagen/client';
+import { UserRepository, AvatarRepository, MostActiveUserRow, InsufficientFundsError, AvatarLimitReachedError } from './repositories';
 import { BALANCE_RESET_QUEUE, BALANCE_RESET_JOB, DEFAULT_PAGE, DEFAULT_LIMIT, MAX_ACTIVE_AVATARS } from './user-service.constants';
 import {
 	UserServiceController as UserServiceControllerInterface,
@@ -21,6 +21,8 @@ import {
 	UploadAvatarRequest,
 	UploadAvatarResponse,
 	DeleteAvatarRequest,
+	AvatarStatus,
+	SetAvatarStatusRequest,
 	GetMostActiveUsersRequest,
 	GetMostActiveUsersResponse,
 	MostActiveUser,
@@ -141,14 +143,14 @@ export class UserService implements UserServiceControllerInterface {
 		if (!sender) throw new RpcException({ code: status.NOT_FOUND, message: 'Sender not found' });
 		const recipient = await this.userRepository.findByLogin(request.recipientLogin);
 		if (!recipient) throw new RpcException({ code: status.NOT_FOUND, message: 'Recipient not found' });
-		if (amount.greaterThan(sender.balance)) {
-			this.logger.warn(`Balance transfer failed: insufficient funds (sender=${request.senderLogin}, amount=${request.amount})`);
-			throw new RpcException({ code: status.FAILED_PRECONDITION, message: 'Insufficient funds' });
-		}
 
 		try {
 			await this.userRepository.transferBalance(sender.id, recipient.id, amount, request.idempotencyKey);
 		} catch (error) {
+			if (error instanceof InsufficientFundsError) {
+				this.logger.warn(`Balance transfer failed: insufficient funds (sender=${request.senderLogin}, amount=${request.amount})`);
+				throw new RpcException({ code: status.FAILED_PRECONDITION, message: 'Insufficient funds' });
+			}
 			if (error instanceof Error) {
 				this.logger.warn(`Balance transfer failed (sender=${request.senderLogin}, recipient=${request.recipientLogin}, amount=${request.amount}): ${error.message}`);
 				throw new RpcException({ code: status.FAILED_PRECONDITION, message: error.message });
@@ -192,22 +194,24 @@ export class UserService implements UserServiceControllerInterface {
 		const user = await this.userRepository.findByLogin(request.login);
 		if (!user) throw new RpcException({ code: status.NOT_FOUND, message: 'User not found' });
 
-		const activeCount = await this.avatarRepository.countActiveByUser(user.id);
-		if (activeCount >= MAX_ACTIVE_AVATARS) {
-			this.logger.warn(`Avatar upload rejected: active limit reached (userId=${user.id}, active=${String(activeCount)})`);
-			throw new RpcException({
-				code: status.RESOURCE_EXHAUSTED,
-				message: `Active avatar limit reached (max ${String(MAX_ACTIVE_AVATARS)})`,
+		try {
+			const avatar = await this.avatarRepository.createWithinLimit(user.id, {
+				mediaKey: request.mediaKey,
+				fileName: request.fileName,
+				sizeBytes: request.sizeBytes,
 			});
+			this.logger.log(`Avatar registered: avatarId=${avatar.id} userId=${user.id} mediaKey=${avatar.mediaKey}`);
+			return { avatarId: avatar.id, mediaKey: avatar.mediaKey };
+		} catch (error) {
+			if (error instanceof AvatarLimitReachedError) {
+				this.logger.warn(`Avatar upload rejected: active limit reached (userId=${user.id})`);
+				throw new RpcException({
+					code: status.RESOURCE_EXHAUSTED,
+					message: `Active avatar limit reached (max ${String(MAX_ACTIVE_AVATARS)})`,
+				});
+			}
+			throw error;
 		}
-
-		const avatar = await this.avatarRepository.create(user.id, {
-			mediaKey: request.mediaKey,
-			fileName: request.fileName,
-			sizeBytes: request.sizeBytes,
-		});
-		this.logger.log(`Avatar registered: avatarId=${avatar.id} userId=${user.id} mediaKey=${avatar.mediaKey}`);
-		return { avatarId: avatar.id, mediaKey: avatar.mediaKey };
 	}
 
 	public async deleteAvatar(request: DeleteAvatarRequest): Promise<void> {
@@ -222,6 +226,28 @@ export class UserService implements UserServiceControllerInterface {
 
 		await this.avatarRepository.softDelete(request.avatarId);
 		this.logger.log(`Avatar soft-deleted: avatarId=${request.avatarId} userId=${user.id}`);
+	}
+
+	public async setAvatarStatus(request: SetAvatarStatusRequest): Promise<void> {
+		if (!request.mediaKey) throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'mediaKey is required' });
+
+		const dbStatus = this.mapAvatarStatus(request.status);
+		await this.avatarRepository.updateStatusByMediaKey(request.mediaKey, dbStatus, request.mimeType);
+		this.logger.log(`Avatar status updated by media key: mediaKey=${request.mediaKey} status=${dbStatus}${request.mimeType ? ` mimeType=${request.mimeType}` : ''}`);
+	}
+
+	// Maps the contract status (media-service reports confirmed → ACTIVE, rejected → REJECTED) onto the Prisma enum.
+	private mapAvatarStatus(value: AvatarStatus): DbAvatarStatus {
+		switch (value) {
+			case AvatarStatus.AVATAR_STATUS_PENDING:
+				return DbAvatarStatus.PENDING;
+			case AvatarStatus.AVATAR_STATUS_ACTIVE:
+				return DbAvatarStatus.ACTIVE;
+			case AvatarStatus.AVATAR_STATUS_REJECTED:
+				return DbAvatarStatus.REJECTED;
+			default:
+				throw new RpcException({ code: status.INVALID_ARGUMENT, message: 'Unknown avatar status' });
+		}
 	}
 
 	public async getMostActiveUsers(request: GetMostActiveUsersRequest): Promise<GetMostActiveUsersResponse> {

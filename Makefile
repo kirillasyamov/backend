@@ -1,7 +1,5 @@
 
-NPM_PUBLISH_TOKEN := $(shell node --env-file=.env -e "console.log(process.env.NPM_PUBLISH_TOKEN)")
 DOCKER_PUBLISH_TOKEN := $(shell node --env-file=.env -e "console.log(process.env.DOCKER_HUB_PUBLISH_TOKEN)")
-COMMON_PACKAGE_VERSION := $(shell node -p "require('./common/package.json').version")
 
 MICROSERVICES := $(patsubst %/,%,$(filter-out common/,$(sort $(dir $(wildcard */package.json)))))
 IMAGES := $(foreach s,$(MICROSERVICES),kirillasyamov/$(s):latest)
@@ -37,11 +35,6 @@ restart-prod:
 	kubectl apply -k .kubernetes/overlays/prod
 	kubectl -n backend rollout restart deployment $(MICROSERVICES)
 	$(MAKE) pods-rollout
-
-update-common-package-version:
-	node -p "require('./common/package.json').version"
-	yq -i '.catalogs.common."@kirillasyamov/common" = "^$(COMMON_PACKAGE_VERSION)"' pnpm-workspace.yaml
-	pnpm install
 
 pull-dev:
 	docker compose pull
@@ -121,29 +114,11 @@ lint:
 format:
 	pnpm format
 
-publish-common:
-	$(MK_PRISMA_DIR_COMMAND)
-	pnpm gen
-	pnpm --filter @kirillasyamov/common build
-	cd common && pnpm publish --no-git-checks --//registry.npmjs.org/:_authToken="$(NPM_PUBLISH_TOKEN)"
-	$(MAKE) update-common-package-version
-
-publish-common-major:
-	cd common && pnpm version major --no-git-tag-version --no-git-checks
-	$(MAKE) publish-common
-	$(MAKE) update-common-package-version
-
-publish-common-minor:
-	cd common && pnpm version minor --no-git-tag-version --no-git-checks
-	$(MAKE) publish-common
-	$(MAKE) update-common-package-version
-
-publish-common-patch:
-	cd common && pnpm version patch --no-git-tag-version --no-git-checks
-	$(MAKE) publish-common
-	$(MAKE) update-common-package-version
+publish-common-%:
+	gh workflow run publish.yaml --ref $(shell git branch --show-current) -f level=$*
 
 publish-docker-images:
+	docker buildx bake pnpm-cache-warm
 	docker login -u kirillasyamov --password $(DOCKER_PUBLISH_TOKEN)
 	docker buildx bake --push
 

@@ -1,7 +1,4 @@
-FROM node:22-alpine AS builder
-
-RUN apk add --no-cache yq
-RUN corepack enable
+FROM node:22-alpine AS deps
 WORKDIR /repo
 
 ARG SERVICE
@@ -9,12 +6,42 @@ ARG SERVICE
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY $SERVICE/ ./$SERVICE/
 
+RUN corepack enable
 RUN yq -i ".packages = [\"$SERVICE\"]" pnpm-workspace.yaml
 
-RUN pnpm install --frozen-lockfile --filter $SERVICE
-RUN [ -f $SERVICE/prisma/schema.prisma ] && pnpm --filter $SERVICE exec prisma generate || true
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store/v11 \
+    --mount=type=cache,target=/root/.cache/pnpm \
+    pnpm install --frozen-lockfile --prefer-offline \
+      --config.network-timeout=60000 --config.fetch-retries=2 \
+      --filter $SERVICE
+
+ENV DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+
+RUN if [ -f $SERVICE/prisma/schema.prisma ]; then pnpm --filter $SERVICE exec prisma generate; fi
+
+FROM node:22-alpine AS builder
+WORKDIR /repo
+
+ARG SERVICE
+
+RUN apk add --no-cache yq
+RUN corepack enable
+
+COPY --from=deps /repo/node_modules ./node_modules
+COPY --from=deps /repo/pnpm-lock.yaml /repo/pnpm-lock.yaml
+COPY --from=deps /repo/pnpm-workspace.yaml /repo/pnpm-workspace.yaml
+COPY --from=deps /repo/package.json /repo/package.json
+COPY --from=deps /repo/tsconfig.base.json /repo/tsconfig.base.json
+COPY --from=deps /repo/$SERVICE /repo/$SERVICE
+
+RUN yq -i ".packages = [\"$SERVICE\"]" pnpm-workspace.yaml
+
 RUN pnpm --filter $SERVICE build
-RUN pnpm deploy --legacy --filter=$SERVICE /deploy
+
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store/v11 \
+    --mount=type=cache,target=/root/.cache/pnpm \
+    pnpm deploy --legacy --prefer-offline --filter=$SERVICE /deploy
+
 COPY --chmod=0755 $SERVICE/entrypoint.sh /deploy/entrypoint.sh
 RUN sed -i 's/\r$//' /deploy/entrypoint.sh
 RUN cp -r $SERVICE/dist /deploy/dist
