@@ -24,18 +24,6 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - uses: pnpm/action-setup@v4
-              with:
-                  version: 10
-
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 22
-                  cache: pnpm
-                  registry-url: https://registry.npmjs.org
-
-            - run: npm i -g npm@11.21.2
-
             - name: Resolve target version
               id: version
               env:
@@ -81,6 +69,20 @@ jobs:
                       echo "skip=false" >> "$GITHUB_OUTPUT"
                       echo "publishing $target (level: $level)"
                   fi
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+
+            - uses: actions/setup-node@v4
+              if: steps.version.outputs.skip != 'true'
+              with:
+                  node-version: 22
+                  cache: pnpm
+                  registry-url: https://registry.npmjs.org
+
+            - run: npm i -g npm@11.21.2
+              if: steps.version.outputs.skip != 'true'
 
             - run: pnpm install --frozen-lockfile
               if: steps.version.outputs.skip != 'true'
