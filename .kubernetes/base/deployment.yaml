@@ -1,0 +1,356 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: auth-service
+    namespace: backend
+    labels:
+        app: auth-service
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: auth-service
+    template:
+        metadata:
+            labels:
+                app: auth-service
+        spec:
+            containers:
+                - name: auth-service
+                  image: kirillasyamov/auth-service:latest
+                  imagePullPolicy: Always
+                  ports:
+                      - name: grpc
+                        containerPort: 50002
+                  envFrom:
+                      - configMapRef:
+                            name: backend-config
+                      - secretRef:
+                            name: backend-secret
+                  env:
+                      - name: NODE_ENV
+                        value: production
+                      - name: GRPC_PORT
+                        value: '50002'
+                      - name: DATABASE_URL
+                        value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/auth
+                  readinessProbe:
+                      grpc:
+                          port: 50002
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                  livenessProbe:
+                      grpc:
+                          port: 50002
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: user-service
+    namespace: backend
+    labels:
+        app: user-service
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: user-service
+    template:
+        metadata:
+            labels:
+                app: user-service
+        spec:
+            containers:
+                - name: user-service
+                  image: kirillasyamov/user-service:latest
+                  imagePullPolicy: Always
+                  ports:
+                      - name: grpc
+                        containerPort: 50051
+                  envFrom:
+                      - configMapRef:
+                            name: backend-config
+                      - secretRef:
+                            name: backend-secret
+                  env:
+                      - name: NODE_ENV
+                        value: production
+                      - name: GRPC_PORT
+                        value: '50051'
+                      - name: DATABASE_URL
+                        value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/user
+                  readinessProbe:
+                      grpc:
+                          port: 50051
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                  livenessProbe:
+                      grpc:
+                          port: 50051
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: token-service
+    namespace: backend
+    labels:
+        app: token-service
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: token-service
+    template:
+        metadata:
+            labels:
+                app: token-service
+        spec:
+            containers:
+                - name: token-service
+                  image: kirillasyamov/token-service:latest
+                  imagePullPolicy: Always
+                  ports:
+                      - name: grpc
+                        containerPort: 50004
+                  envFrom:
+                      - configMapRef:
+                            name: backend-config
+                      - secretRef:
+                            name: backend-secret
+                  env:
+                      - name: NODE_ENV
+                        value: production
+                      - name: GRPC_PORT
+                        value: '50004'
+                  readinessProbe:
+                      grpc:
+                          port: 50004
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                  livenessProbe:
+                      grpc:
+                          port: 50004
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: media-service
+    namespace: backend
+    labels:
+        app: media-service
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: media-service
+    template:
+        metadata:
+            labels:
+                app: media-service
+        spec:
+            containers:
+                - name: media-service
+                  image: kirillasyamov/media-service:latest
+                  imagePullPolicy: Always
+                  ports:
+                      - name: grpc
+                        containerPort: 50006
+                  envFrom:
+                      - configMapRef:
+                            name: backend-config
+                      - secretRef:
+                            name: backend-secret
+                  env:
+                      - name: NODE_ENV
+                        value: production
+                      - name: GRPC_PORT
+                        value: '50006'
+                  readinessProbe:
+                      grpc:
+                          port: 50006
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                  livenessProbe:
+                      grpc:
+                          port: 50006
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: api-gateway
+    namespace: backend
+    labels:
+        app: api-gateway
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: api-gateway
+    template:
+        metadata:
+            labels:
+                app: api-gateway
+        spec:
+            containers:
+                - name: api-gateway
+                  image: kirillasyamov/api-gateway:latest
+                  imagePullPolicy: Always
+                  ports:
+                      - name: http
+                        containerPort: 3001
+                  envFrom:
+                      - configMapRef:
+                            name: backend-config
+                  env:
+                      - name: NODE_ENV
+                        value: production
+                  readinessProbe:
+                      httpGet:
+                          path: /healthz
+                          port: 3001
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                  livenessProbe:
+                      httpGet:
+                          path: /healthz
+                          port: 3001
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+    name: postgres
+    namespace: backend
+    labels:
+        app: postgres
+spec:
+    serviceName: postgres
+    replicas: 1
+    selector:
+        matchLabels:
+            app: postgres
+    template:
+        metadata:
+            labels:
+                app: postgres
+        spec:
+            containers:
+                - name: postgres
+                  image: postgres:15.3
+                  ports:
+                      - containerPort: 5432
+                  env:
+                      - name: POSTGRES_USER
+                        valueFrom:
+                            secretKeyRef:
+                                name: backend-secret
+                                key: POSTGRES_USER
+                      - name: POSTGRES_PASSWORD
+                        valueFrom:
+                            secretKeyRef:
+                                name: backend-secret
+                                key: POSTGRES_PASSWORD
+                  volumeMounts:
+                      - name: postgres-data
+                        mountPath: /var/lib/postgresql/data
+    volumeClaimTemplates:
+        - metadata:
+              name: postgres-data
+          spec:
+              accessModes: ['ReadWriteOnce']
+              resources:
+                  requests:
+                      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+    name: redis
+    namespace: backend
+    labels:
+        app: redis
+spec:
+    serviceName: redis
+    replicas: 1
+    selector:
+        matchLabels:
+            app: redis
+    template:
+        metadata:
+            labels:
+                app: redis
+        spec:
+            containers:
+                - name: redis
+                  image: redis:7-alpine
+                  args: ['--appendonly', 'yes']
+                  ports:
+                      - containerPort: 6379
+                  volumeMounts:
+                      - name: redis-data
+                        mountPath: /data
+    volumeClaimTemplates:
+        - metadata:
+              name: redis-data
+          spec:
+              accessModes: ['ReadWriteOnce']
+              resources:
+                  requests:
+                      storage: 512Mi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+    name: minio
+    namespace: backend
+    labels:
+        app: minio
+spec:
+    serviceName: minio
+    replicas: 1
+    selector:
+        matchLabels:
+            app: minio
+    template:
+        metadata:
+            labels:
+                app: minio
+        spec:
+            containers:
+                - name: minio
+                  image: minio/minio:latest
+                  args: ['server', '/data', '--console-address', ':9001']
+                  ports:
+                      - containerPort: 9000
+                      - containerPort: 9001
+                  env:
+                      - name: MINIO_ROOT_USER
+                        valueFrom:
+                            secretKeyRef:
+                                name: backend-secret
+                                key: MINIO_ROOT_USER
+                      - name: MINIO_ROOT_PASSWORD
+                        valueFrom:
+                            secretKeyRef:
+                                name: backend-secret
+                                key: MINIO_ROOT_PASSWORD
+                  volumeMounts:
+                      - name: minio-data
+                        mountPath: /data
+    volumeClaimTemplates:
+        - metadata:
+              name: minio-data
+          spec:
+              accessModes: ['ReadWriteOnce']
+              resources:
+                  requests:
+                      storage: 1Gi

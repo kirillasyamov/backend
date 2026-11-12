@@ -5,20 +5,25 @@
 	"main": "index.js",
 	"scripts": {
 		"build": "tsc -b",
-		"start": "cross-env NODE_ENV=production PORT=3001 node --import @swc-node/register/esm-register --enable-source-maps dist/main.js",
-		"start:dev": "cross-env NODE_ENV=development PORT=3001 node --watch --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
-		"start:debug": "cross-env NODE_ENV=debug PORT=3001 node --watch --inspect --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
-		"start:prod": "cross-env NODE_ENV=production PORT=3001 node --import @swc-node/register/esm-register --enable-source-maps dist/main.js",
+		"start": "cross-env NODE_ENV=production node --import @swc-node/register/esm-register --enable-source-maps dist/main.js",
+		"start:dev": "cross-env NODE_ENV=development node --watch --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
+		"start:debug": "cross-env NODE_ENV=debug node --watch --inspect --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
+		"start:prod": "cross-env NODE_ENV=production node --import @swc-node/register/esm-register --enable-source-maps dist/main.js",
 		"lint": "eslint \"src/**/*.ts\"",
 		"lint:fix": "eslint \"src/**/*.ts\" --fix",
 		"format": "prettier --write \"src/**/*.ts\"",
-		"format:check": "prettier --check \"src/**/*.ts\""
+		"format:check": "prettier --check \"src/**/*.ts\"",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage"
 	},
 	"keywords": [],
 	"author": "kirillasyamov",
 	"license": "ISC",
 	"type": "module",
 	"dependencies": {
+		"@swc-node/register": "catalog:development",
+		"@swc/core": "catalog:development",
 		"@fastify/swagger": "catalog:nest",
 		"@fastify/swagger-ui": "catalog:nest",
 		"@grpc/grpc-js": "catalog:grpc",
@@ -32,21 +37,24 @@
 		"@nestjs/throttler": "catalog:nest",
 		"class-transformer": "catalog:validation",
 		"class-validator": "catalog:validation",
-		"common": "workspace:*",
 		"grpc-health-check": "catalog:grpc",
 		"jose": "catalog:auth",
 		"reflect-metadata": "catalog:runtime",
-		"rxjs": "catalog:runtime"
+		"rxjs": "catalog:runtime",
+		"@kirillasyamov/common": "catalog:common"
 	},
 	"devDependencies": {
-		"@swc-node/register": "catalog:development",
-		"@swc/core": "catalog:development",
 		"@types/node": "catalog:development",
 		"cross-env": "catalog:development",
 		"eslint": "catalog:development",
 		"eslint-config-prettier": "catalog:development",
 		"prettier": "catalog:development",
 		"typescript": "catalog:development",
-		"typescript-eslint": "catalog:development"
+		"typescript-eslint": "catalog:development",
+		"@nestjs/testing": "catalog:test",
+		"@vitest/coverage-v8": "catalog:test",
+		"unplugin-swc": "catalog:test",
+		"vitest": "catalog:test",
+		"vitest-mock-extended": "catalog:test"
 	}
 }

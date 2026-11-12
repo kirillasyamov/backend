@@ -1,12 +1,10 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { TokenPair } from 'common/contracts/generated/auth';
-import { AuthServiceClient } from 'common/contracts/generated/auth';
-import { UserServiceClient } from 'common/contracts/generated/user';
-import { Empty } from 'common/contracts/generated/google/protobuf/empty';
 
 import type {
+	AuthServiceClient,
+	TokenPair,
 	CreateAccountRequest,
 	CreateAccountResponse,
 	DeleteAccountRequest,
@@ -14,27 +12,25 @@ import type {
 	CreateSessionResponse,
 	RevokeSessionRequest,
 	RefreshSessionRequest,
-} from 'common/contracts/generated/auth';
+} from '@kirillasyamov/common/contracts/generated/auth';
 
-import type { CreateUserRequest, CreateUserResponse, DeleteUserRequest } from 'common/contracts/generated/user';
+import type { UserServiceClient, CreateUserRequest, CreateUserResponse, DeleteUserRequest } from '@kirillasyamov/common/contracts/generated/user';
 
-interface SignUpRequest {
-	login: string;
-	email: string;
-	password: string;
-	device: string;
-	age: number;
-	bio: string;
-}
+import type { Empty } from '@kirillasyamov/common/contracts/generated/google/protobuf/empty';
+
+import { SignUpRequestDto, SignInRequestDto } from './dto';
+import { AUTH_PACKAGE, USER_PACKAGE, DEFAULT_ROLE_ID, TOKEN_CREATION_ERROR } from '@/gateway.constants';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
+	private readonly logger = new Logger(AuthService.name);
+
 	private authGrpcService!: AuthServiceClient;
 	private userGrpcService!: UserServiceClient;
 
 	constructor(
-		@Inject('AUTH_PACKAGE') private authClient: ClientGrpc,
-		@Inject('USER_PACKAGE') private userClient: ClientGrpc,
+		@Inject(AUTH_PACKAGE) private authClient: ClientGrpc,
+		@Inject(USER_PACKAGE) private userClient: ClientGrpc,
 	) {}
 
 	onModuleInit() {
@@ -42,7 +38,20 @@ export class AuthService implements OnModuleInit {
 		this.userGrpcService = this.userClient.getService<UserServiceClient>('UserService');
 	}
 
-	public async signUp(request: SignUpRequest): Promise<TokenPair> {
+	private async callGrpc<T>(service: string, method: string, operation: () => Promise<T>): Promise<T> {
+		const started = Date.now();
+		try {
+			const result = await operation();
+			this.logger.debug(`${service}.${method} ok ${String(Date.now() - started)}ms`);
+			return result;
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			this.logger.debug(`${service}.${method} failed ${String(Date.now() - started)}ms: ${message}`);
+			throw error;
+		}
+	}
+
+	public async signUp(request: SignUpRequestDto): Promise<TokenPair> {
 		const { login, email, password, device, age, bio } = request;
 		let accountId, profileId;
 		try {
@@ -50,76 +59,90 @@ export class AuthService implements OnModuleInit {
 			accountId = account.accountId;
 			const session = await this.createSession({
 				accountId: account.accountId,
-				roleId: 1,
+				roleId: DEFAULT_ROLE_ID,
 				password,
 				device,
 				expiresAt: undefined,
 				createdAt: undefined,
 			});
-			const user = await this.createUser({ userProfile: { login, email, age, bio } });
+			const user = await this.createUser({ login, email, age, bio });
 			profileId = user.profileId;
 			if (session.tokens) return session.tokens;
 		} catch (error) {
-			if (accountId) await this.deleteAccount({ id: accountId });
-			if (profileId) await this.deleteUser({ id: profileId });
+			await this.rollback(accountId, profileId);
 			throw error;
 		}
-		throw new Error('Failed to create access and refresh tokens');
+		await this.rollback(accountId, profileId);
+		throw new InternalServerErrorException(TOKEN_CREATION_ERROR);
+	}
+
+	private async rollback(accountId?: string, profileId?: string): Promise<void> {
+		if (accountId) {
+			try {
+				await this.deleteAccount({ id: accountId });
+			} catch (error) {
+				this.logger.error(`Failed to rollback account ${accountId}`, error instanceof Error ? error.stack : String(error));
+			}
+		}
+		if (profileId) {
+			try {
+				await this.deleteUser({ id: profileId });
+			} catch (error) {
+				this.logger.error(`Failed to rollback user ${profileId}`, error instanceof Error ? error.stack : String(error));
+			}
+		}
 	}
 
 	private async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
-		return firstValueFrom(this.userGrpcService.createUser(request));
+		return this.callGrpc('UserService', 'createUser', async () => firstValueFrom(this.userGrpcService.createUser(request)));
 	}
 	private async deleteUser(request: DeleteUserRequest): Promise<Empty> {
-		return firstValueFrom(this.userGrpcService.deleteUser(request));
+		return this.callGrpc('UserService', 'deleteUser', async () => firstValueFrom(this.userGrpcService.deleteUser(request)));
 	}
 	private async createAccount(request: CreateAccountRequest): Promise<CreateAccountResponse> {
-		return firstValueFrom(this.authGrpcService.createAccount(request));
+		return this.callGrpc('AuthService', 'createAccount', async () => firstValueFrom(this.authGrpcService.createAccount(request)));
 	}
 	private async deleteAccount(request: DeleteAccountRequest): Promise<Empty> {
-		return firstValueFrom(this.authGrpcService.deleteAccount(request));
+		return this.callGrpc('AuthService', 'deleteAccount', async () => firstValueFrom(this.authGrpcService.deleteAccount(request)));
 	}
 	private async createSession(request: CreateSessionRequest): Promise<CreateSessionResponse> {
-		return firstValueFrom(this.authGrpcService.createSession(request));
+		return this.callGrpc('AuthService', 'createSession', async () => firstValueFrom(this.authGrpcService.createSession(request)));
 	}
 
-	revokeSession(request: RevokeSessionRequest): Promise<Empty> {
-		return firstValueFrom(this.authGrpcService.revokeSession(request));
+	async revokeSession(request: RevokeSessionRequest): Promise<Empty> {
+		return this.callGrpc('AuthService', 'revokeSession', async () => firstValueFrom(this.authGrpcService.revokeSession(request)));
 	}
 
 	async refreshSession(request: RefreshSessionRequest): Promise<TokenPair> {
-		const { tokens } = await firstValueFrom(this.authGrpcService.refreshSession(request));
-		if (!tokens) throw new Error('Failed to refresh session');
+		const { tokens } = await this.callGrpc('AuthService', 'refreshSession', async () => firstValueFrom(this.authGrpcService.refreshSession(request)));
+		if (!tokens) throw new UnauthorizedException('Failed to refresh session');
 		return tokens;
 	}
 
-	public async signIn(request: {
-		login?: string;
-		email?: string;
-		password: string;
-		device: string;
-	}): Promise<TokenPair> {
+	public async signIn(request: SignInRequestDto): Promise<TokenPair> {
 		const { login, email, password, device } = request;
 
-		if (!login && !email) {
-			throw new Error('Either login or email must be provided');
+		let account: CreateAccountResponse;
+		if (login) {
+			account = await this.callGrpc('AuthService', 'getAccountByLogin', async () => firstValueFrom(this.authGrpcService.getAccountByLogin({ login })));
+		} else {
+			if (!email) {
+				throw new BadRequestException('Either login or email must be provided');
+			}
+			account = await this.callGrpc('AuthService', 'getAccountByEmail', async () => firstValueFrom(this.authGrpcService.getAccountByEmail({ email })));
 		}
 
-		const account = login
-			? await firstValueFrom(this.authGrpcService.getAccountByLogin({ login }))
-			: await firstValueFrom(this.authGrpcService.getAccountByEmail({ email: email! }));
-
 		const { tokens } = await this.createSession({
-				accountId: account.accountId,
-				roleId: account.roleId,
-				password,
-				device,
-				expiresAt: undefined,
-				createdAt: undefined,
-			});
+			accountId: account.accountId,
+			roleId: account.roleId,
+			password,
+			device,
+			expiresAt: undefined,
+			createdAt: undefined,
+		});
 
 		if (tokens) return tokens;
-		throw new Error('Failed to create access and refresh tokens');
+		throw new InternalServerErrorException(TOKEN_CREATION_ERROR);
 	}
 
 	async signOut(sessionId: string): Promise<void> {

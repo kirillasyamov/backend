@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import type { DynamicModule, Provider } from '@nestjs/common';
 import type { PrismaModuleAsyncOptions } from './prisma.interfaces';
 import { PRISMA_CLIENT_CLASS, PRISMA_ADAPTER, PRISMA_CLIENT } from './prisma.tokens';
-import type { PrismaClientConstructor, PrismaClientLike } from './prisma.interfaces';
+import type { PrismaClientConstructor } from './prisma.interfaces';
 import type { SqlDriverAdapterFactory } from '@prisma/client/runtime/client';
 
 @Module({})

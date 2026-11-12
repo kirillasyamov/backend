@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package media.v1;
+
+import "google/protobuf/empty.proto";
+
+service MediaService {
+	rpc RequestUploadUrl (RequestUploadUrlRequest) returns (RequestUploadUrlResponse);
+	rpc GetFileMetadata (GetFileMetadataRequest) returns (GetFileMetadataResponse);
+	rpc GetDownloadUrl (GetDownloadUrlRequest) returns (GetDownloadUrlResponse);
+	rpc DeleteFile (DeleteFileRequest) returns (google.protobuf.Empty);
+	rpc ListFiles (ListFilesRequest) returns (ListFilesResponse);
+}
+
+enum FileStatus {
+	FILE_STATUS_UNSPECIFIED = 0;
+	FILE_STATUS_PENDING = 1;
+	FILE_STATUS_CONFIRMED = 2;
+	FILE_STATUS_REJECTED = 3;
+}
+
+message FileMetadata {
+	string key = 1;
+	string ownerAccountId = 2;
+	string mimeType = 3;
+	uint64 sizeBytes = 4;
+	optional string originalFilename = 5;
+	FileStatus status = 6;
+	string createdAt = 7;
+}
+
+message RequestUploadUrlRequest {
+	string purpose = 1;
+	string ownerAccountId = 2;
+	optional string filename = 3;
+	map<string, string> metadata = 4;
+	optional uint64 sizeBytes = 5;
+}
+
+message RequestUploadUrlResponse {
+	string key = 1;
+	string url = 2;
+	map<string, string> fields = 3;
+	string expiresAt = 4;
+}
+
+message GetFileMetadataRequest {
+	string key = 1;
+	string ownerAccountId = 2;
+}
+
+message GetFileMetadataResponse {
+	FileMetadata fileMetadata = 1;
+}
+
+message GetDownloadUrlRequest {
+	string key = 1;
+	string ownerAccountId = 2;
+	optional uint32 expiresInSeconds = 3;
+}
+
+message GetDownloadUrlResponse {
+	string url = 1;
+	string expiresAt = 2;
+}
+
+message DeleteFileRequest {
+	string key = 1;
+	string ownerAccountId = 2;
+}
+
+message ListFilesRequest {
+	string ownerAccountId = 1;
+	optional string purpose = 2;
+	optional string cursor = 3;
+	uint32 limit = 4;
+}
+
+message ListFilesResponse {
+	repeated FileMetadata files = 1;
+	optional string nextCursor = 2;
+}

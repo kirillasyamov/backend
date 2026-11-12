@@ -1,0 +1,25 @@
+enum AvatarStatus {
+	PENDING
+	ACTIVE
+	REJECTED
+}
+
+model Avatar {
+	id        String @id @default(nanoid())
+	userId    String
+	user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	mediaKey  String
+	mimeType  String?
+	sizeBytes Int?
+
+	status    AvatarStatus @default(PENDING)
+	deletedAt DateTime?
+
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	@@index([userId, status])
+	@@index([userId, createdAt])
+	@@map("avatar")
+}

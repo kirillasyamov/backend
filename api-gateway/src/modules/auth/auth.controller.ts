@@ -1,12 +1,9 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { SignUpDto } from './dto/signup.dto';
-import { SignInDto } from './dto/signin.dto';
-import { RefreshDto } from './dto/refresh.dto';
+import { SignUpRequestDto, SignInRequestDto, RefreshRequestDto, TokenPairResponseDto } from './dto';
 import { AuthService } from './auth.service';
-import { Public } from './decorators/public.decorator';
-import { CurrentUser } from './decorators/current-user.decorator';
+import { Public, CurrentUser } from './decorators';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -14,29 +11,32 @@ export class AuthController {
 	constructor(private readonly authService: AuthService) {}
 
 	@ApiOperation({ summary: 'Create account, session, profile' })
-	@ApiBody({ type: SignUpDto })
+	@ApiBody({ type: SignUpRequestDto })
+	@ApiOkResponse({ type: TokenPairResponseDto })
 	@Public()
 	@Post('signup')
 	@HttpCode(HttpStatus.OK)
-	public async signUp(@Body() dto: SignUpDto) {
+	public async signUp(@Body() dto: SignUpRequestDto): Promise<TokenPairResponseDto> {
 		return await this.authService.signUp(dto);
 	}
 
 	@ApiOperation({ summary: 'Create new session' })
-	@ApiBody({ type: SignInDto })
+	@ApiBody({ type: SignInRequestDto })
+	@ApiOkResponse({ type: TokenPairResponseDto })
 	@Public()
 	@Post('signin')
 	@HttpCode(HttpStatus.OK)
-	public async signIn(@Body() dto: SignInDto) {
+	public async signIn(@Body() dto: SignInRequestDto): Promise<TokenPairResponseDto> {
 		return await this.authService.signIn(dto);
 	}
 
 	@ApiOperation({ summary: 'Refresh session' })
-	@ApiBody({ type: RefreshDto })
+	@ApiBody({ type: RefreshRequestDto })
+	@ApiOkResponse({ type: TokenPairResponseDto })
 	@Public()
 	@Post('refresh')
 	@HttpCode(HttpStatus.OK)
-	public async refresh(@Body() dto: RefreshDto) {
+	public async refresh(@Body() dto: RefreshRequestDto): Promise<TokenPairResponseDto> {
 		return await this.authService.refreshSession(dto);
 	}
 

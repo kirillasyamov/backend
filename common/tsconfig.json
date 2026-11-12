@@ -4,10 +4,11 @@
 		"outDir": "./dist",
 		"rootDir": ".",
 		"composite": true,
+		"emitDeclarationOnly": true,
 		"paths": {
-			"@/*": ["./modules/*", "./utils/*", "./contracts/*", "./enums/*", "./filters/*"]
+			"@/*": ["./modules/*", "./utils/*", "./contracts/*", "./enums/*", "./filters/*", "./interceptors/*", "./decorators/*"]
 		},
 		"tsBuildInfoFile": "./dist/.tsbuildinfo"
 	},
-	"include": ["modules/**/*", "utils/**/*", "contracts/**/*", "configs/**/*", "filters/**/*", "enums/**/*"]
+	"include": ["index.ts", "modules/**/*", "utils/**/*", "contracts/**/*", "configs/**/*", "filters/**/*", "interceptors/**/*", "decorators/**/*", "enums/**/*"]
 }

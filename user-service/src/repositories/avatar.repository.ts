@@ -1,0 +1,178 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { PRISMA_CLIENT } from '@kirillasyamov/common';
+import { AvatarStatus, Prisma, type PrismaClient } from '@prismagen/client';
+import { MAX_ACTIVE_AVATARS } from '../user-service.constants';
+
+export interface MostActiveUserRow {
+	id: string;
+	login: string;
+	email: string;
+	age: number;
+	bio: string;
+	balance: Prisma.Decimal;
+	avatarId: string | null;
+	avatarMediaKey: string | null;
+	avatarMimeType: string | null;
+	avatarCreatedAt: Date | string | null;
+}
+
+export interface MostActiveUsersPage {
+	users: MostActiveUserRow[];
+	total: number;
+}
+
+export class AvatarLimitReachedError extends Error {
+	constructor() {
+		super('Active avatar limit reached');
+		this.name = 'AvatarLimitReachedError';
+	}
+}
+
+@Injectable()
+export class AvatarRepository {
+	constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
+
+	public async countActiveByUser(userId: string): Promise<number> {
+		return this.prisma.avatar.count({ where: { userId, status: AvatarStatus.ACTIVE, deletedAt: null } });
+	}
+
+	public async createWithinLimit(
+		userId: string,
+		data: { mediaKey: string; fileName?: string; sizeBytes?: number },
+	): Promise<{
+		id: string;
+		mediaKey: string;
+	}> {
+		return this.prisma.$transaction(async tx => {
+			await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${userId} FOR UPDATE`;
+			const active = await tx.avatar.count({ where: { userId, status: AvatarStatus.ACTIVE, deletedAt: null } });
+			if (active >= MAX_ACTIVE_AVATARS) throw new AvatarLimitReachedError();
+			const avatar = await tx.avatar.create({
+				data: {
+					userId,
+					mediaKey: data.mediaKey,
+					sizeBytes: data.sizeBytes,
+				},
+			});
+			return { id: avatar.id, mediaKey: avatar.mediaKey };
+		});
+	}
+
+	public async create(
+		userId: string,
+		data: { mediaKey: string; fileName?: string; sizeBytes?: number },
+	): Promise<{
+		id: string;
+		mediaKey: string;
+	}> {
+		const avatar = await this.prisma.avatar.create({
+			data: {
+				userId,
+				mediaKey: data.mediaKey,
+				sizeBytes: data.sizeBytes,
+				status: AvatarStatus.PENDING,
+			},
+		});
+		return { id: avatar.id, mediaKey: avatar.mediaKey };
+	}
+
+	public async updateStatusByMediaKey(mediaKey: string, status: AvatarStatus, mimeType?: string): Promise<void> {
+		await this.prisma.avatar.updateMany({
+			where: { mediaKey },
+			data: {
+				status,
+				...(mimeType ? { mimeType } : {}),
+			},
+		});
+	}
+
+	public async findActiveMediaKeysByUserId(userId: string): Promise<string[]> {
+		const avatars = await this.prisma.avatar.findMany({
+			where: { userId, status: AvatarStatus.ACTIVE, deletedAt: null },
+			select: { mediaKey: true },
+			orderBy: { createdAt: 'desc' },
+		});
+		return avatars.map(avatar => avatar.mediaKey);
+	}
+
+	public async findActiveMediaKeysByUserIds(userIds: string[]): Promise<Map<string, string[]>> {
+		if (userIds.length === 0) return new Map();
+
+		const avatars = await this.prisma.avatar.findMany({
+			where: { userId: { in: userIds }, status: AvatarStatus.ACTIVE, deletedAt: null },
+			select: { userId: true, mediaKey: true },
+			orderBy: { createdAt: 'desc' },
+		});
+
+		const byUser = new Map<string, string[]>();
+		for (const avatar of avatars) {
+			const existing = byUser.get(avatar.userId);
+			if (existing) {
+				existing.push(avatar.mediaKey);
+			} else {
+				byUser.set(avatar.userId, [avatar.mediaKey]);
+			}
+		}
+		return byUser;
+	}
+
+	public async findOwnedById(userId: string, avatarId: string): Promise<{ userId: string; status: AvatarStatus } | null> {
+		const avatar = await this.prisma.avatar.findFirst({
+			where: { id: avatarId, status: AvatarStatus.ACTIVE, deletedAt: null, user: { id: userId } },
+			select: { userId: true, status: true },
+		});
+		return avatar;
+	}
+
+	public async softDelete(avatarId: string): Promise<void> {
+		await this.prisma.avatar.update({
+			where: { id: avatarId },
+			data: { deletedAt: new Date() },
+		});
+	}
+
+	public async findMostActiveUsers(options: { minAge?: number; maxAge?: number; page: number; limit: number }): Promise<MostActiveUsersPage> {
+		const { page, limit } = options;
+		const where: Prisma.Sql[] = [
+			Prisma.sql`u."deletedAt" IS NULL`,
+			Prisma.sql`u.bio <> ''`,
+			Prisma.sql`(SELECT COUNT(*) FROM "avatar" a2 WHERE a2."userId" = u.id AND a2."status" = 'ACTIVE' AND a2."deletedAt" IS NULL) >= ${MAX_ACTIVE_AVATARS}`,
+		];
+		if (options.minAge !== undefined) where.push(Prisma.sql`u.age >= ${options.minAge}`);
+		if (options.maxAge !== undefined) where.push(Prisma.sql`u.age <= ${options.maxAge}`);
+
+		const whereSql = Prisma.join(where, ' AND ');
+
+		const users = await this.prisma.$queryRaw<unknown[]>(
+			Prisma.sql`
+				SELECT
+					u.id, u.login, u.email, u.age, u.bio, u.balance,
+					a.id AS "avatarId",
+					a."mediaKey" AS "avatarMediaKey",
+					a."mimeType" AS "avatarMimeType",
+					a."createdAt" AS "avatarCreatedAt"
+				FROM "user" u
+				LEFT JOIN LATERAL (
+					SELECT id, "mediaKey", "mimeType", "createdAt"
+					FROM "avatar"
+					WHERE "userId" = u.id AND "status" = 'ACTIVE' AND "deletedAt" IS NULL
+					ORDER BY "createdAt" DESC
+					LIMIT 1
+				) a ON true
+				WHERE ${whereSql}
+				ORDER BY u."createdAt" DESC
+				LIMIT ${limit} OFFSET ${(page - 1) * limit}
+			`,
+		);
+
+		const countResult = await this.prisma.$queryRaw<{ total: bigint }[]>(Prisma.sql`SELECT COUNT(*) AS total FROM "user" u WHERE ${whereSql}`);
+
+		return {
+			users: (users as MostActiveUserRow[]).map(row => ({
+				...row,
+				balance: row.balance instanceof Prisma.Decimal ? row.balance : new Prisma.Decimal(String(row.balance)),
+			})),
+			total: Number(countResult[0]?.total ?? 0),
+		};
+	}
+}
