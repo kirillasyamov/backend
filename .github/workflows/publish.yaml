@@ -1,0 +1,122 @@
+name: publish
+
+on:
+    push:
+        paths: ['common/**']
+    workflow_dispatch:
+        inputs:
+            level:
+                description: 'Version bump level'
+                required: true
+                type: choice
+                options:
+                    - patch
+                    - minor
+                    - major
+
+jobs:
+    publish:
+        if: github.actor != 'github-actions[bot]'
+        runs-on: ubuntu-latest
+        permissions:
+            id-token: write
+            contents: write
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Resolve target version
+              id: version
+              env:
+                  EVENT_NAME: ${{ github.event_name }}
+                  LEVEL: ${{ inputs.level }}
+                  BEFORE_SHA: ${{ github.event.before }}
+              run: |
+                  set -e
+                  if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+                      level="$LEVEL"
+                  else
+                      before=""
+                      case "$BEFORE_SHA" in
+                          ""|0000000*) ;; # новая ветка — сравнивать не с чем
+                          *)
+                              if git fetch --no-tags --depth=1 origin "$BEFORE_SHA" 2>/dev/null; then
+                                  if git show "$BEFORE_SHA:common/package.json" > "$RUNNER_TEMP/before.json" 2>/dev/null; then
+                                      before=$(node -p "require('$RUNNER_TEMP/before.json').version")
+                                  fi
+                              fi
+                              ;;
+                      esac
+                      current=$(node -p "require('./common/package.json').version")
+                      if [ -n "$before" ] && [ "$before" != "$current" ]; then
+                          level="manual"
+                      else
+                          level="patch"
+                      fi
+                  fi
+                  # целевая версия считается без записи в файл, чтобы не ломать --frozen-lockfile ниже
+                  case "$level" in
+                      manual) target=$(node -p "require('./common/package.json').version") ;;
+                      patch)  target=$(node -p "const p=require('./common/package.json').version.split('.');p[2]++;p.join('.')") ;;
+                      minor)  target=$(node -p "const p=require('./common/package.json').version.split('.');p[1]++;p[2]=0;p.join('.')") ;;
+                      major)  target=$(node -p "const p=require('./common/package.json').version.split('.');p[0]++;p[1]=0;p[2]=0;p.join('.')") ;;
+                  esac
+                  echo "level=$level" >> "$GITHUB_OUTPUT"
+                  echo "target=$target" >> "$GITHUB_OUTPUT"
+                  if npm view "@kirillasyamov/common@$target" version >/dev/null 2>&1; then
+                      echo "skip=true" >> "$GITHUB_OUTPUT"
+                      echo "@kirillasyamov/common@$target is already on npm — nothing to do."
+                  else
+                      echo "skip=false" >> "$GITHUB_OUTPUT"
+                      echo "publishing $target (level: $level)"
+                  fi
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+
+            - uses: actions/setup-node@v4
+              if: steps.version.outputs.skip != 'true'
+              with:
+                  node-version: 22
+                  cache: pnpm
+                  registry-url: https://registry.npmjs.org
+
+            - run: npm i -g npm@11.21.2
+              if: steps.version.outputs.skip != 'true'
+
+            - run: pnpm install --frozen-lockfile
+              if: steps.version.outputs.skip != 'true'
+
+            - name: Bump version
+              if: steps.version.outputs.skip != 'true' && steps.version.outputs.level != 'manual'
+              run: cd common && pnpm version ${{ steps.version.outputs.level }} --no-git-tag-version
+
+            - run: |
+                  mkdir -p common/contracts/generated
+                  pnpm gen
+              if: steps.version.outputs.skip != 'true'
+
+            - run: pnpm --filter @kirillasyamov/common build
+              if: steps.version.outputs.skip != 'true'
+
+            - run: cd common && npm publish --access public
+              if: steps.version.outputs.skip != 'true'
+
+            - name: Sync catalog and lockfile
+              if: steps.version.outputs.skip != 'true'
+              run: |
+                  node -e "const fs=require('fs'),v=require('./common/package.json').version,f='pnpm-workspace.yaml',t=fs.readFileSync(f,'utf8'),n=t.replace(/('@kirillasyamov\/common': )\^?\S+/,'\$1^'+v);if(n===t){console.error('catalog entry for @kirillasyamov/common not found');process.exit(1)}fs.writeFileSync(f,n);console.log('catalog: ^'+v)"
+                  pnpm install
+
+            - name: Push release commit
+              if: steps.version.outputs.skip != 'true'
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add common/package.json pnpm-workspace.yaml pnpm-lock.yaml
+                  if git diff --staged --quiet; then
+                      echo "Nothing to sync — skipping release commit."
+                  else
+                      git commit -m "release common ${{ steps.version.outputs.target }}"
+                      git push
+                  fi

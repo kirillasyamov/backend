@@ -5,22 +5,23 @@
 	"main": "index.js",
 	"scripts": {
 		"build": "tsc -b",
-		"start": "node --import @swc-node/register/esm-register --enable-source-maps dist/main.js",
-		"start:dev": "cross-env PORT=3002 node --watch --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
-		"start:debug": "cross-env PORT=3002 node --watch --inspect --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
-		"start:prod": "node --import @swc-node/register/esm-register --enable-source-maps dist/main.js",
+		"start": "node --import @swc-node/register/esm-register --enable-source-maps dist/src/main.js",
+		"start:dev": "node --watch --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
+		"start:debug": "node --watch --inspect --import @swc-node/register/esm-register --enable-source-maps src/main.ts",
+		"start:prod": "node --import @swc-node/register/esm-register --enable-source-maps dist/src/main.js",
 		"lint": "eslint \"src/**/*.ts\"",
 		"lint:fix": "eslint \"src/**/*.ts\" --fix",
 		"format": "prettier --write \"src/**/*.ts\"",
-		"format:check": "prettier --check \"src/**/*.ts\""
+		"format:check": "prettier --check \"src/**/*.ts\"",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage"
 	},
 	"keywords": [],
 	"author": "kirillasyamov",
 	"license": "ISC",
 	"type": "module",
 	"devDependencies": {
-		"@swc/core": "catalog:development",
-		"@swc-node/register": "catalog:development",
 		"@types/node": "catalog:development",
 		"@types/pg": "catalog:development",
 		"cross-env": "catalog:development",
@@ -28,9 +29,16 @@
 		"eslint-config-prettier": "catalog:development",
 		"prettier": "catalog:development",
 		"typescript": "catalog:development",
-		"typescript-eslint": "catalog:development"
+		"typescript-eslint": "catalog:development",
+		"@nestjs/testing": "catalog:test",
+		"@vitest/coverage-v8": "catalog:test",
+		"unplugin-swc": "catalog:test",
+		"vitest": "catalog:test",
+		"vitest-mock-extended": "catalog:test"
 	},
 	"dependencies": {
+		"@swc/core": "catalog:development",
+		"@swc-node/register": "catalog:development",
 		"dotenv": "catalog:config",
 		"@grpc/grpc-js": "catalog:grpc",
 		"@grpc/proto-loader": "catalog:grpc",
@@ -47,6 +55,7 @@
 		"pg": "catalog:database",
 		"reflect-metadata": "catalog:runtime",
 		"rxjs": "catalog:runtime",
-		"@node-rs/argon2": "catalog:auth"
+		"@node-rs/argon2": "catalog:auth",
+		"@kirillasyamov/common": "catalog:common"
 	}
 }

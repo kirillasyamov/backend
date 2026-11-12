@@ -1,0 +1,19 @@
+model Account {
+	id String @id @default(nanoid())
+
+	email String @unique
+	login String @unique
+	isEmailVerified Boolean @default(false) @map("is_email_verified")
+	role Role @relation(fields: [roleId], references: [id])
+	roleId Int @map("role_id")
+
+	passwordHash String @map("password_hash")
+
+	sessions Session[]
+
+	createdAt DateTime @default(now()) @map("created_at")
+	updatedAt DateTime @updatedAt @map("updated_at")
+
+	@@index([roleId])
+	@@map("account")
+}

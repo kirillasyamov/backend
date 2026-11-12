@@ -4,7 +4,7 @@ import Joi from 'joi';
 
 @Module({})
 export class ConfigModule {
-	static forRoot(...schemas: Joi.ObjectSchema[]): Promise<DynamicModule> {
+	static async forRoot(...schemas: Joi.ObjectSchema[]): Promise<DynamicModule> {
 		const env = process.env.NODE_ENV ?? 'development';
 
 		return NestConfigModule.forRoot({

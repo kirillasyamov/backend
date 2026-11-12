@@ -12,6 +12,6 @@ export const redisConfig: RedisConfig = {
 		return Number(process.env.REDIS_PORT) || 6379;
 	},
 	get password() {
-		return process.env.REDIS_PASSWORD || undefined;
+		return process.env.REDIS_PASSWORD;
 	},
 };

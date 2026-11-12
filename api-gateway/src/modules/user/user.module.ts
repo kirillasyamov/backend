@@ -1,39 +1,30 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { fileURLToPath } from 'node:url';
+import { ClientsModule } from '@nestjs/microservices';
+import { AUTH_PROTO_VERSION, USER_PROTO_VERSION, MEDIA_PROTO_VERSION, HEALTH_PROTO_VERSION } from '@kirillasyamov/common/contracts';
+import { authProtoPath, userProtoPath, mediaProtoPath, healthProtoPath } from '@kirillasyamov/common';
+import { grpcClients, grpcServiceConfig } from '@kirillasyamov/common/configs';
+import { AUTH_PACKAGE, USER_PACKAGE, MEDIA_PACKAGE } from '@/gateway.constants';
 import { UserController } from './user.controller';
+import { UserBalanceController } from './balance.controller';
+import { AvatarController } from './avatar.controller';
 import { UserService } from './user.service';
-
-const healthProtoPath = fileURLToPath(import.meta.resolve('grpc-health-check/proto/health/v1/health.proto'));
 
 @Module({
 	imports: [
-		ClientsModule.registerAsync([
-			{
-				name: 'AUTH_PACKAGE',
-				useFactory: () => ({
-					transport: Transport.GRPC,
-					options: {
-						package: ['auth.v1', 'grpc.health.v1'],
-						protoPath: ['../common/contracts/proto/auth.proto', healthProtoPath],
-						url: 'localhost:50002',
-					},
-				}),
-			},
-			{
-				name: 'USER_PACKAGE',
-				useFactory: () => ({
-					transport: Transport.GRPC,
-					options: {
-						package: ['user.v1', 'grpc.health.v1'],
-						protoPath: ['../common/contracts/proto/user.proto', healthProtoPath],
-						url: 'localhost:50051',
-					},
-				}),
-			},
-		]),
+		ClientsModule.registerAsync(
+			grpcClients([
+				{ name: AUTH_PACKAGE, packages: [AUTH_PROTO_VERSION, HEALTH_PROTO_VERSION], protoPaths: [authProtoPath, healthProtoPath], url: grpcServiceConfig.authServiceUrl },
+				{ name: USER_PACKAGE, packages: [USER_PROTO_VERSION, HEALTH_PROTO_VERSION], protoPaths: [userProtoPath, healthProtoPath], url: grpcServiceConfig.userServiceUrl },
+				{
+					name: MEDIA_PACKAGE,
+					packages: [MEDIA_PROTO_VERSION, HEALTH_PROTO_VERSION],
+					protoPaths: [mediaProtoPath, healthProtoPath],
+					url: grpcServiceConfig.mediaServiceUrl,
+				},
+			]),
+		),
 	],
-	controllers: [UserController],
+	controllers: [UserController, UserBalanceController, AvatarController],
 	providers: [UserService],
 	exports: [UserService],
 })

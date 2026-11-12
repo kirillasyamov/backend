@@ -1,0 +1,16 @@
+model Transfer {
+	id             String @id @default(nanoid())
+	idempotencyKey String? @unique
+
+	fromUserId     String
+	toUserId       String
+	amount         Decimal @db.Decimal(18, 2)
+
+	fromUser       User @relation("TransferFrom", fields: [fromUserId], references: [id], onDelete: Restrict)
+	toUser         User @relation("TransferTo", fields: [toUserId], references: [id], onDelete: Restrict)
+	createdAt      DateTime @default(now())
+
+	@@index([fromUserId])
+	@@index([toUserId])
+	@@map("transfer")
+}
